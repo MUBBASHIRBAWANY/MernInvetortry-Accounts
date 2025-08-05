@@ -1,0 +1,158 @@
+import React, { useEffect, useState } from 'react';
+import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogTitle from '@mui/material/DialogTitle';
+import axios, { all } from 'axios';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import { deleteDataFunction, getDataFundtion } from '../../Api/CRUD Functions';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import { fetchOpeninginventory } from '../../Redux/Reducers/OpenIngINventory';
+import { fetchproduct } from '../../Redux/Reducers/ProductReducer';
+
+
+const OpeningInventoryList = () => {
+  const [rows, setRows] = useState();
+  const [deleteR, setdeleteR] = useState(false)
+  const dispatch = useDispatch()
+  const [selectedId, setSelectedId] = useState(null);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const editOpeningInventory = useSelector((state) => state.Openinginventory.Openinginventory)
+  const navigate = useNavigate()
+  const getData = async () => {
+    const data = await getDataFundtion("/Openinginventory")
+    const product = await getDataFundtion("/Product")
+    const store = await getDataFundtion("/store")
+    const Location = await getDataFundtion("/Location")
+    setRows(data)
+    dispatch(fetchproduct(product.data))
+    dispatch(fetchOpeninginventory(data))
+  }
+
+
+
+
+  useEffect(() => {
+    getData()
+  }, [])
+
+  const handleEditClick = (id) => {
+    const check = editOpeningInventory.find((item) => item._id == id).Status
+
+    if (check == false) {
+      navigate(`/OpeningInventoryEdit/${id}`)
+    }
+    else {
+      toast.error("first unpost")
+    }
+  };
+
+  const handleDeleteClick = (id) => {
+    setSelectedId(id);
+    const check = editOpeningInventory.find((item) => item._id == id).Status
+    console.log(check)
+    setOpenDeleteDialog(true);
+    if (check == false) {
+    }
+    else {
+      toast.error("first unpost")
+    }
+  };
+
+  const handleViweClick = (id) => {
+    console.log(id)
+    navigate(`/OpeningInventoryView/${id}`)
+  }
+  const handleConfirmDelete = async () => {
+    setOpenDeleteDialog(false);
+
+
+
+    setRows(rows.filter((row) => row._id !== selectedId));
+    const res = deleteDataFunction(`/Openinginventory/DeleteOpeningInventory/${selectedId}`)
+
+    // console.log(res)
+  };
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }).replace(",", ""); // Removes the comma
+  };
+
+  const columns = [
+    { field: 'DateStart', headerName: 'DateStart', width: 150, renderCell: (params) => formatDate(params.value), },
+    { field: 'DateEnd', headerName: 'DateEnd', width: 250, renderCell: (params) => formatDate(params.value), },
+    {
+      field: 'InvoetoryData', headerName: 'Total Inventory', width: 200,
+      renderCell: (params) => {
+        return params.value.length;
+      },
+    },
+    {
+      field: 'Status', headerName: 'Status', width: 250, renderCell: (params) => params.value == "Open" ? "Open" :
+        params.value == "UnPost" ? "UnPost" : params.value == "Close" ? "Close" : "False"
+    },
+
+    {
+      field: 'actions',
+      type: 'actions',
+      headerName: 'Actions',
+      width: 130,
+      getActions: ({ id }) => [
+        <GridActionsCellItem
+          icon={<VisibilityIcon />}
+          label="View"
+          onClick={() => handleViweClick(id)}
+          color="view"
+        />,
+        <GridActionsCellItem
+          icon={<EditIcon />}
+          label="Edit"
+          onClick={() => handleEditClick(id)}
+        />,
+        <GridActionsCellItem
+          icon={<DeleteIcon />}
+          label="Delete"
+          onClick={() => handleDeleteClick(id)}
+          color="error"
+        />,
+      ],
+    },
+  ];
+
+  return (
+
+    <div style={{ margin: 20, height: "70%", width: '80vw' }}>
+      <ToastContainer />
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        pageSize={5}
+        getRowId={(row) => row._id}
+        rowsPerPageOptions={[5]}
+        experimentalFeatures={{ newEditingApi: true }}
+      />
+
+      <Dialog
+        open={openDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
+      >
+        <DialogTitle>Confirm Delete?</DialogTitle>
+        <DialogActions>
+          <Button onClick={() => setOpenDeleteDialog(false)}>Cancel</Button>
+          <Button onClick={handleConfirmDelete} color="error">Delete</Button>
+        </DialogActions>
+      </Dialog>
+    </div>
+  )
+}
+
+export default OpeningInventoryList
