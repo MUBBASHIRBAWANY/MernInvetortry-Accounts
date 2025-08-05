@@ -22,10 +22,7 @@ const purchchaseInvoiceSchema = mongoose.Schema({
         type: String,
         required: true
     },
-    SalesFlowRef: {
-        type: String,
-        required: true
-    },
+    
     PostStatus: {
         type: Boolean,
         required: true

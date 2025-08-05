@@ -441,10 +441,10 @@ const SalesInvoiceAdd = () => {
                       styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
                       cacheOptions
                       loadOptions={loadInvoiceOptions}
-                      value={row.product ? {
-                        value: `${row.product} ${console.log(row)}`,
-                        label: `${Products.find((p) => p._id === row.product)?.mastercode} ${Products.find((p) => p._id === row.product)?.ProductName}`
-                      } : null}
+                        value={row.product ? {
+                          value: `${row.product} ${console.log(row)}`,
+                          label: `${Products.find((p) => p._id === row.product)?.mastercode} ${Products.find((p) => p._id === row.product)?.ProductName}`
+                        } : null}
                       onChange={(selectedOption) =>
                         handleCellChange(row.id, 'product', selectedOption || '')
                       }

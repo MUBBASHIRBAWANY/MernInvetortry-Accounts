@@ -44,9 +44,7 @@ const productSchema = new mongoose.Schema({
     RetailPrice: {
         type: String,
     },
-    salesFlowRef: {
-        type: String,
-    },
+    
     CodeRef: {
         type: String,
         Unique : true

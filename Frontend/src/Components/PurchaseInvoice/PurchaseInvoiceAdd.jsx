@@ -44,13 +44,12 @@ const PurchaseInvoiceAdd = () => {
     if (loginVendor.userType == 1) {
 
       const vendor = Vendor.find((item) => item._id == loginVendor.Vendor[0])?.code
-      const VendorProduct = Products.length == 0 ? arrProduct.data.filter((item) => item.mastercode.slice(0, 2) == vendor) : Products.filter((item) => item.mastercode.slice(0, 2) == vendor)
+
       const Userstore = Store.find((item) => item._id == loginVendor?.Store[0])
       const UserLocation = location.find((item) => item._id == loginVendor?.Location)
 
       setlginerlocation(UserLocation)
       setlginerStore(Userstore)
-      setFilterProduct(VendorProduct)
 
 
     }
@@ -87,13 +86,6 @@ const PurchaseInvoiceAdd = () => {
 
 
   }
-  const SortProduct = (value) => {
-    setPoVendor(value)
-    console.log(Products)
-    const vendor = Vendor.find((item) => item._id == value)?.code
-    const VendorProduct = Products.filter((item) => item.mastercode.slice(0, 2) == vendor)
-    setFilterProduct(VendorProduct)
-  }
 
   useEffect(() => {
     getData()
@@ -117,13 +109,13 @@ const PurchaseInvoiceAdd = () => {
   };
   const loadInvoiceOptions = async (inputValue) => {
     if (!inputValue) return [];
-
-    const filtered = filterProduct
+    console.log(Products)
+    const filtered = Products
       .filter((item) =>
-        item.ProductName.toLowerCase().includes(inputValue.toLowerCase()) || item.mastercode.toLowerCase().includes(inputValue.toLowerCase())
+        item.ProductName.toLowerCase().includes(inputValue.toLowerCase())
       )
       .slice(0, 50); // limit to first 50 results
-
+    console.log(filterProduct)
     return filtered.map((item) => ({
       label: `${item.ProductName} ${item.mastercode}`,
       value: item._id
@@ -131,13 +123,13 @@ const PurchaseInvoiceAdd = () => {
     }));
   };
 
-  const StartingProduct = filterProduct.slice(0, 50).map((item) => ({
-    label: `${item.ProductName} ${item.mastercode}`,
+  const StartingProduct = Products.slice(0, 50).map((item) => ({
+    label: `${item.ProductName}`,
     value: item._id
   }));;
 
   const handleCellChange = (id, field, value) => {
-
+    console.log(field)
     setTableData(tableData.map(row => {
       if (row.id === id) {
 
@@ -182,35 +174,35 @@ const PurchaseInvoiceAdd = () => {
           console.log()
           updatedRow.ValuewithGst = parseFloat(Number(updatedRow.ValueAfterDiscout) + Number(updatedRow.Gst)).toFixed(4)
           updatedRow.netAmunt = updatedRow.ValuewithGst
-          updatedRow.AdvanceTax = parseFloat((updatedRow.netAmunt / 100) * 0.1).toFixed(4)
-          updatedRow.netAmuntWithAdvnaceTax = parseFloat(Number(updatedRow.netAmunt) + Number(updatedRow.AdvanceTax)).toFixed(4)
+          updatedRow.netAmuntWithAdvnaceTax = updatedRow.netAmunt
         }
         if (field == "AfterTaxdiscount") {
           updatedRow.netAmunt = updatedRow.ValuewithGst - updatedRow.AfterTaxdiscount
-          updatedRow.AdvanceTax = parseFloat((updatedRow.netAmunt / 100) * 0.1).toFixed(4)
-          updatedRow.netAmuntWithAdvnaceTax = parseFloat(Number(updatedRow.netAmunt) + Number(updatedRow.AdvanceTax)).toFixed(4)
-       
-        }
+          updatedRow.netAmuntWithAdvnaceTax = updatedRow.netAmunt;
 
-        if (field === "box" || field === "carton") {
+        }
+        if (field === "box" || field === "carton" || field ===  "Rate") {
           console.log(findProduct)
           if (findProduct) {
             const BoxinCarton = parseInt(findProduct.BoxinCarton || 0);
             const PcsinBox = parseInt(findProduct.PcsinBox || 0);
             const Allunit = BoxinCarton * PcsinBox;
             // Default values if empty
+            updatedRow.GrossAmount = (updatedRow.carton * updatedRow.Rate)
+            updatedRow.ValueAfterDiscout = updatedRow.GrossAmount - row.discount
             const box = parseInt(updatedRow.box || 0);
             const carton = parseInt(updatedRow.carton || 0);
             if (box === 0) {
               updatedRow.unit = Allunit * carton;
             } else if (carton === 0) {
               updatedRow.unit = PcsinBox * box;
+
             } else {
               const totalbox = box * findProduct.PcsinBox
               updatedRow.unit = Allunit * carton + totalbox;
             }
             const boxPrice = (updatedRow.unit / findProduct.PcsinBox)
-            updatedRow.GrossAmount = (boxPrice * findProduct.TPPurchase)
+            updatedRow.GrossAmount = (boxPrice * updatedRow.Rate)
             const totalBox = updatedRow.unit / findProduct.PcsinBox
             console.log(totalBox)
             updatedRow.perBoxAmount = updatedRow.inclGstAmnt / totalBox - row.discount
@@ -225,6 +217,7 @@ const PurchaseInvoiceAdd = () => {
             updatedRow.totalBox = totalBox
 
           }
+
 
         }
         return updatedRow;
@@ -245,9 +238,9 @@ const PurchaseInvoiceAdd = () => {
   const totalAdvanceTax = tableData.reduce((sum, row) => sum + (parseFloat(row.AdvanceTax) || 0), 0);
 
   const onSubmit = async (data) => {
-    loginVendor.userType == 1 ? data.Vendor = loginVendor.Vendor[0] : data.Vendor = poVendor
+    loginVendor.userType == 1 ? data.Vendor = loginVendor.Vendor[0] : data.Vendor = defVen
     data.PurchaseData = tableData
-    data.VendorCode = loginVendor.userType == 1 ? Vendor.find((item) => item._id == loginVendor.Vendor).code : Vendor.find((item) => item._id == poVendor).code
+    data.VendorCode = loginVendor.userType == 1 ? Vendor.find((item) => item._id == loginVendor.Vendor).code : Vendor.find((item) => item._id == defVen).code
     data.Location = loginVendor.userType == 1 ? lginerlocation._id : selectedLocation
     data.Store = loginVendor.userType == 1 ? lginerStore._id : selectedStore
     console.log(data)
@@ -291,7 +284,7 @@ const PurchaseInvoiceAdd = () => {
           <div>
             <label className="block text-gray-700 font-semibold mb-2">Vendor</label>
             <Select
-              onChange={(vals) => SortProduct(vals.value)}
+              onChange={(vals) => setDefven(vals.value)}
               options={loginVendor.userType == 1 ? AllVendor : VendorDrp}
               defaultValue={loginVendor.userType == 1 ? AllVendor : null}
               isDisabled={loginVendor.userType == 1 ? true : false || tableData.length != 0 ? true : false}
@@ -312,14 +305,7 @@ const PurchaseInvoiceAdd = () => {
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
             />
           </div>
-          <div>
-            <label className="block text-gray-700 font-seumibold mb-2">Sales Flow Ref</label>
-            <input
-              type="text"
-              {...register("SalesFlowRef")}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+
           <div>
             <label className="block text-gray-700 font-semibold mb-2">Location</label>
             {loginVendor.userType == 1 ? <input
@@ -358,16 +344,16 @@ const PurchaseInvoiceAdd = () => {
             <thead>
               <tr className="bg-gray-100">
                 <th className="border px-36">Product</th>
-                <th className="border p-2">Unit</th>
+
                 <th className="border p-2">CTN</th>
-                <th className="border p-2">Box</th>
+                <th className="border p-2">Rate</th>
                 <th className="border p-2">Trade Value Exc. All Taxes</th>
-                <th className="border p-2">Per Box Value exclusive gst</th>
                 <th className="border p-2">Discount </th>
                 <th className="border p-2"> Trade Value After Discount</th>
                 <th className="border p-2">Gst</th>
                 <th className="border p-2">Trade Value with Gst</th>
                 <th>After Gst Discount</th>
+
                 <th className="border p-2">Net Amount </th>
                 <th className="border p-2">Action</th>
               </tr>
@@ -392,9 +378,6 @@ const PurchaseInvoiceAdd = () => {
                     />
                   </td>
                   <td className="border p-2">
-                    {row.unit}
-                  </td>
-                  <td className="border p-2">
                     <input
                       type="text"
                       value={row.carton}
@@ -405,17 +388,15 @@ const PurchaseInvoiceAdd = () => {
                   <td className="border p-2">
                     <input
                       type="text"
-                      value={row.box}
-                      onChange={(e) => handleCellChange(row.id, 'box', e.target.value)}
+                      value={row.Rate}
+                      onChange={(e) => handleCellChange(row.id, 'Rate', e.target.value)}
                       className="w-full p-1 border rounded"
                     />
                   </td>
                   <td className="border p-2">
                     {row.GrossAmount}
                   </td>
-                  <td className="border p-2">
-                    {row.PerBoxValueGrs}
-                  </td>
+
                   <td className="border p-2">
                     <input
                       type="number"
@@ -463,11 +444,9 @@ const PurchaseInvoiceAdd = () => {
               tableData.length != 0 ? <tfoot>
                 <tr className="bg-gray-100 font-semibold">
                   <td className="border p-2">Total</td>
-                  <td className="border p-2">{totalUnit}</td>
                   <td className="border p-2">{totalCarton}</td>
-                  <td className="border p-2">{totalBox}</td>
-                  <td className="border p-2">{totalGrossAmount.toFixed(2)}</td>
                   <td className="border p-2"></td>
+                  <td className="border p-2">{totalGrossAmount.toFixed(2)}</td>
                   <td className="border p-2">{totalDiscount.toFixed(2)}</td>
                   <td className="border p-2">{totalValueAfterDiscount.toFixed(2)}</td>
                   <td className="border p-2">{totalGST.toFixed(2)}</td>

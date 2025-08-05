@@ -25,13 +25,13 @@ const OpeningInventoryList = () => {
   const editOpeningInventory = useSelector((state) => state.Openinginventory.Openinginventory)
   const navigate = useNavigate()
   const getData = async () => {
-    const data = await getDataFundtion("/Openinginventory")
-    const product = await getDataFundtion("/Product")
-    const store = await getDataFundtion("/store")
-    const Location = await getDataFundtion("/Location")
-    setRows(data)
-    dispatch(fetchproduct(product.data))
-    dispatch(fetchOpeninginventory(data))
+  const data = await getDataFundtion("/Openinginventory")
+  const product = await getDataFundtion("/Product")
+  const store = await getDataFundtion("/store")
+  const Location = await getDataFundtion("/Location")
+  setRows(data)
+  dispatch(fetchproduct(product.data))
+  dispatch(fetchOpeninginventory(data))
   }
 
 

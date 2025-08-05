@@ -15,6 +15,9 @@ const InvoiceSelectionModal = () => {
     const dispatch = useDispatch()
     const invoices = useSelector((state) => state.PurchaseInvoice.PurchaseInvoice)
     const Admin = useSelector((state) => state.AdminReducer.AdminReducer)
+    const Accounts = useSelector((state) => state.ChartofAccounts.ChartofAccounts)
+    const Vendor = useSelector((state) => state.Vendor.state);
+
 
 
 
@@ -43,6 +46,7 @@ const InvoiceSelectionModal = () => {
                     inv: item.PurchaseInvoice,
                     date: item.PurchaseInvoiceDate,
                     status: true,
+                    Vendor: Vendor.find((ven)=> ven._id === item.Vendor)?.AccountCode,
                     Location: item.Location,
                     Store: item.Store,
                     data: item.PurchaseData,
@@ -76,13 +80,8 @@ const InvoiceSelectionModal = () => {
                         store: item.Store,
                     },
                     {
-                        Account: Admin.AdvanceTax,
-                        Debit: item.data.reduce((sum, row) => sum + (parseFloat(row.AdvanceTax) || 0), 0),
-                        store: item.Store,
-                    },
-                    {
-                        Account: Admin.Vendor,
-                        Credit: item.data.reduce((sum, row) => sum + (parseFloat(row.netAmuntWithAdvnaceTax) || 0), 0) ,
+                        Account: Accounts.find((ven)=> ven.AccountCode === item.Vendor)._id,
+                        Credit: item.data.reduce((sum, row) => sum + (parseFloat(row.netAmuntWithAdvnaceTax) || 0), 0),
                         store: item.Store,
                     },
                 ]

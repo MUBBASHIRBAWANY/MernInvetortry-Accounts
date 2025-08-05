@@ -85,14 +85,7 @@ const ChannelEdit = () => {
                 required
               />
             </div>
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">Sales Flow Ref </label>
-              <input
-                type="text"
-                {...register("salesFlowRef")}
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+          
             <div>
               <label className="block text-gray-700 font-semibold mb-2">Channel  </label>
               <Select

@@ -64,7 +64,7 @@ const ChannelList = () => {
   const columns = [
     { field: 'code', headerName: 'Channel Code', width: 250, },
     { field: 'ChanneName', headerName: 'Channel Name', width: 450, },
-    { field: 'salesFlowRef', headerName: 'Sales Flow Ref', width: 250, },
+  
     {
       field: 'ChanneType', headerName: 'Channel Type', width: 200,  renderCell: (params) => {
       const ChanneType1 = ChanneType.find((item)=> item._id == params.value)?.ChanneTypeName

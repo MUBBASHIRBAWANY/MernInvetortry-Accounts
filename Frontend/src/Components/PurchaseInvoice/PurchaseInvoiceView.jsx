@@ -12,6 +12,7 @@ const PurchaseInvoiceView = () => {
     const { id } = useParams();
     const [status, setStatus] = useState(false);
     const PurchaseInvoice = useSelector((state) => state.PurchaseInvoice.PurchaseInvoice);
+    const ChartofAccounts =  useSelector((state) => state.ChartofAccounts.ChartofAccounts);
     const Vendor = useSelector((state) => state.Vendor.state);
     const Products = useSelector((state) => state.Product.product);
     const editInvoice = PurchaseInvoice.find((item) => item._id === id);
@@ -31,7 +32,7 @@ const PurchaseInvoiceView = () => {
 
     const getProductName = (productId) => {
         const product = Products.find((p) => p._id === productId);
-        return product ? `${product.mastercode} ${product.ProductName}` : 'N/A';
+        return product ? `${product.ProductName}` : 'N/A';
     };
 
 
@@ -57,7 +58,7 @@ const PurchaseInvoiceView = () => {
     const AdvanceTax = tableData.reduce((sum, row) => sum + (parseFloat(row.AdvanceTax) || 0), 0)
     const AfterTaxdiscount = tableData.reduce((sum, row) => sum + (parseFloat(row.AfterTaxdiscount) || 0), 0)
     const totalNetAmount = tableData.reduce((sum, row) => sum + (parseFloat(row.netAmunt) || 0), 0);
-
+    const AccountCode = Vendor.find((item)=> item._id === editInvoice?.Vendor).AccountCode
     console.log(AdvanceTax)
     const handlePostUnpost = async (action) => {
         console.log(action)
@@ -88,7 +89,7 @@ const PurchaseInvoiceView = () => {
                 store: editInvoice.Store,
             },
             {
-                Account: Admin.Vendor,
+                Account: ChartofAccounts.find((item)=> item.AccountCode === AccountCode)._id,
                 Credit: netAmuntWithAdvnaceTax ,
                 store: editInvoice.Store,
             },

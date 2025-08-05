@@ -66,7 +66,7 @@ const ProductEdit = () => {
             TPPurchase: findProduct.TPPurchase,
             TPSale: findProduct.TPSale,
             SaleTaxBy: findProduct.SaleTaxBy,
-            SalesTax: findProduct.SaleTaxAmount || findProduct.SaleTaxPercent,
+            SalesTax: findProduct.SaleTaxPercent,
             BoxinCarton: findProduct.BoxinCarton,
             PcsinBox: findProduct.PcsinBox,
             RetailPrice: findProduct.RetailPrice,
@@ -82,7 +82,7 @@ const ProductEdit = () => {
             }
         }
         try {
-            data.SaleTaxBy == 1 ? data.SaleTaxAmount = data.SalesTax : data.SaleTaxPercent = data.SalesTax
+            data.SaleTaxPercent = data.SalesTax
             console.log(data)
 
             await updateDataFunction(`/product/updateProduct/${id}`, data)

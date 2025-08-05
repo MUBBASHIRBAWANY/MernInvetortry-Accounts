@@ -52,7 +52,7 @@ const ProductAdd = () => {
         try {
             const lastCode = await getDataFundtion(`product/lastcode/`)
             console.log(lastCode)
-            lastCode.data === null ? data.code = generateNextCodeForProduct(0) : data.code = generateNextCodeForProduct(productByMsku.data.slice(-1)[0].code)
+            lastCode.data === null ? data.code = generateNextCodeForProduct(0) : data.code = generateNextCodeForProduct(lastCode.data.code)
             console.log(data)
             await createDataFunction("/product", data)
             toast.success("Data Add")
@@ -90,15 +90,6 @@ const ProductAdd = () => {
                             <input
                                 type="text"
                                 {...register("ProductName")}
-                                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-gray-700 font-semibold mb-2"> Sales Flow Ref </label>
-                            <input
-                                type="text"
-                                {...register("salesFlowRef")}
                                 className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required
                             />
