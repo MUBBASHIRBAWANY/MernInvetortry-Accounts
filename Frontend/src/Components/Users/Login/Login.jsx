@@ -18,8 +18,8 @@ const Login = () => {
             console.log(response.data.val.email)
             if (response.data.val.email == "admin@js.com") {
                 console.log("Admin")
-                const role = await getDataFundtion(`userRole/role/${response.data.val.selectRole}`)
-                dispatch(fetchUserRights(role?.data?.Roles))
+                // const role = await getDataFundtion(`userRole/role/${response.data.val.selectRole}`)
+                // dispatch(fetchUserRights(role?.data?.Roles))
                 dispatch(Admin(response.data.val))
             }
             else {

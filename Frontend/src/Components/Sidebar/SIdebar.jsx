@@ -327,7 +327,7 @@ const SIdebar = () => {
             >
               
               <NavItem to="/PurchaseInvoiceList" label="Purchase Invoice" />
-              <NavItem to="/SalesInvoice" label="Sales Order" />
+              <NavItem to="/SaleOrder" label="Sales Order" />
               <NavItem to="/SalesInvoice" label="Sales Invoice Dc" />
               <NavItem to="/SalesInvoice" label="Sales Invoice" />
 

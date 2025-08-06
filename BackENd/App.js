@@ -42,6 +42,7 @@ import ChqBookRouter from "./Routes/ChqBookRoutes.js"
 import GernalLagerRouter from "./Routes/GernalLagerReportRoutes.js"
 import compression from "compression"
 import ZoneRouter from "./Routes/ZoneRoute.js"
+import SaleOrderRouter from "./Routes/SaleOrderRoutes.js"
 const Router = express.Router()
 const app = express();
 app.use(cors());
@@ -78,3 +79,4 @@ export const OpeningInvoiceRoute = app.use('/OpeningInvoice' , OpeningInvoiceRou
 export const VoucherRoute  = app.use('/Voucher', VoucherRouter);
 export const GernalLager = app.use("/GernalLager" , GernalLagerRouter)
 export const ZoneRoute = app.use("/Zone" , ZoneRouter)
+export const SaleOrderRoute = app.use("/SaleOrder" , SaleOrderRouter)

@@ -32,7 +32,7 @@ const UserAdd = () => {
 
   useEffect(() => {
     checkRight()
-  })
+  },[])
 
   const {
     register,

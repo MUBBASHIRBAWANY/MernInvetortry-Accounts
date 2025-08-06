@@ -145,6 +145,8 @@ import ChqBookEditPage from "../Pages/Accounts/ChqBook/ChqBookEditPage"
 import ChqBookViewPAge from "../Pages/Accounts/ChqBook/ChqBookViewPAge"
 import CustomerChqAddPage from "../Pages/Accounts/CustomerChq/CustomerChqAddPage"
 import Genrallager from "../Pages/Reports/Accounts/Genrallager/Genrallager"
+import SaleOrderListPage from "../Pages/SaleOrder/SaleOrderListPage"
+import SaleOrderAddPage from "../Pages/SaleOrder/SaleOrderAddPage"
 
 
 
@@ -398,7 +400,7 @@ const routes = [
         path: '/CityEdit/:id',
         component: <CityEditPage />
     },
-  
+
     {
         path: "/PurchaseInvoiceList",
         component: <PurchaseInvoiceListPage />
@@ -734,6 +736,14 @@ const routes = [
     {
         path: "/GenralLager",
         component: <Genrallager />
+    },
+    {
+        path: "/SaleOrder",
+        component: <SaleOrderListPage />
+    },
+     {
+        path: "/SaleOrderAdd",
+        component: <SaleOrderAddPage />
     },
 ]
 

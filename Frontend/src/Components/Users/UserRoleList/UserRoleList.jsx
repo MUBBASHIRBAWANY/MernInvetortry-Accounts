@@ -49,7 +49,7 @@ const UserRoleList = () => {
     }
   }
   useEffect(() => {
-    checkAcess()
+    //checkAcess()
 
     getData()
   }, [])

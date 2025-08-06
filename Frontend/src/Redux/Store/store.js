@@ -41,6 +41,7 @@ import OpeningInvoices from "../Reducers/OpeningInvoicesReducer.js";
 import AdminReducer from "../Reducers/AdminReducer.js";
 import VoucherReducer  from '../Reducers/VoucherReducer.js';
 import ChqBook from '../Reducers/ChqBookReducer.js';
+import SaleOrder from "../Reducers/SaleOrderReducer.js"
 const rootReducer = combineReducers({
     isSideBar: sidebarReducer,
     sidebarOptions: sidebarOptions,
@@ -81,7 +82,8 @@ const rootReducer = combineReducers({
     OpeningInvoices : OpeningInvoices,
     AdminReducer : AdminReducer,
     VoucherReducer : VoucherReducer,
-    ChqBook : ChqBook
+    ChqBook : ChqBook,
+    SaleOrder : SaleOrder
 
 });
 

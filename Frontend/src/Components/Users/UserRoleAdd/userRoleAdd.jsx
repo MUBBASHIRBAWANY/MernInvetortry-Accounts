@@ -49,7 +49,7 @@ const userRoleAdd = () => {
 
   };
   useEffect(() => {
-    checkAcess()
+    //checkAcess()
   }, [])
 
   return (
