@@ -11,23 +11,22 @@ import { updateDataFunction } from '../../Api/CRUD Functions';
 const OderBookerEdit = () => {
   const { id } = useParams()
   const editOrderBooker = useSelector((state) => state.OrderBooker.OrderBooker)
-  const Terrotory = useSelector((state) => state.Terrotory.Terrotory)
+  const Region = useSelector((state) => state.Region.Region)
   const [editCat, seteditCat] = useState([])
-  const [TerrotorySelect, setSelectTerrotory] = useState(undefined)
+  const [RegionSelect, setSelectRegion] = useState(undefined)
   const getData = () => {
     const data = editOrderBooker.find((item) => item._id == id)
     console.log(data)
     seteditCat(data)
-    const selectVen = Terrotory.find((item) => item._id == data.Terrotory)
+    const selectVen = Region.find((item) => item._id == data.Region)
     console.log(selectVen)
-    setSelectTerrotory({
+    setSelectRegion({
       value: selectVen._id,
-      label: `${selectVen.TerrotoryName} ${selectVen.code} `
+      label: `${selectVen.RegionName} ${selectVen.code} `
     })
     if (data) {
       reset({
         OrderBookerName: data.OrderBookerName,
-        salesFlowRef: data.salesFlowRef,
         Address: data.Address,
         Cnic: data.Cnic,
         PhoneNumber: data.PhoneNumber
@@ -67,8 +66,8 @@ const OderBookerEdit = () => {
       console.log(err)
     }
   }
-  const Terrotorydrp = Terrotory.map((item) => {
-    return { value: item._id, label: `${item.TerrotoryName} (${item.code})` }
+  const Regiondrp = Region.map((item) => {
+    return { value: item._id, label: `${item.RegionName} (${item.code})` }
   })
   return (
     <div className='mx-5'>
@@ -87,16 +86,8 @@ const OderBookerEdit = () => {
               />
             </div>
             <div>
-              <label className="block text-gray-700 font-semibold mb-2">Sales Flow Ref </label>
-              <input
-                type="text"
-                {...register("salesFlowRef")}
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">Terrotory </label>
-              <Select isDisabled={true} value={TerrotorySelect} onChange={(val) => setPrTerrotory(val.value)} options={Terrotorydrp} />
+              <label className="block text-gray-700 font-semibold mb-2">Region </label>
+              <Select isDisabled={true} value={RegionSelect} onChange={(val) => setPrRegion(val.value)} options={Regiondrp} />
             </div>
             <div>
               <label className="block text-gray-700 font-semibold mb-2">Address </label>

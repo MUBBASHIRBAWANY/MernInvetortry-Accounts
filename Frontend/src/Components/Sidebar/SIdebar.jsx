@@ -297,7 +297,6 @@ const SIdebar = () => {
                 <NavItem to="/Zonelist" label="Zone" />
                 <NavItem to="/Regionlist" label="Region" />
                 <NavItem to="/CityList" label="City" />
-                <NavItem to="/Terrotorylist" label="Territory" />
                 <NavItem to="/OrderBookerList" label="Order Booker" />
               </DropdownSection>
 
@@ -328,7 +327,7 @@ const SIdebar = () => {
               
               <NavItem to="/PurchaseInvoiceList" label="Purchase Invoice" />
               <NavItem to="/SaleOrder" label="Sales Order" />
-              <NavItem to="/SalesInvoice" label="Sales Invoice Dc" />
+              <NavItem to="/OrderDCList" label="Sales Invoice Dc" />
               <NavItem to="/SalesInvoice" label="Sales Invoice" />
 
               <NavItem to="/BankPaymentVoucherList" label="Voucher" />

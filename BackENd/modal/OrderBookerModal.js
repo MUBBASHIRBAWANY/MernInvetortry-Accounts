@@ -9,14 +9,11 @@ const OrderBookerSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    Terrotory: {
+    Region: {
         type: String,
         required: true
     },
-    salesFlowRef: {
-        type: String,
-        required: true
-    },
+
     PhoneNumber: {
         type: String,
     },

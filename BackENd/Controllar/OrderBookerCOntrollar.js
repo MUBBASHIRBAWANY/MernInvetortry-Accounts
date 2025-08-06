@@ -2,17 +2,12 @@ import OrderBookerModal from "../modal/OrderBookerModal.js";
 import VendorModal from "../modal/VendorModal.js"
 export const CreateOrderBooker = async (req, res) => {
     try {
-        const salesFlowRef = await OrderBookerModal.find({ salesFlowRef: req.body.salesFlowRef })
-        
-        if (salesFlowRef.length === 0) {
-            console.log("first")
-            const data = await OrderBookerModal.create(req.body)
-            res.status(200).send("data Add")
-        }
-        else {
-        
-            res.status(400).send("some thing went wrong")
-        }
+
+
+        const data = await OrderBookerModal.create(req.body)
+        res.status(200).send("data Add")
+
+
     }
     catch (err) {
         console.log(err)

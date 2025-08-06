@@ -237,16 +237,7 @@ const ClientUpdate = () => {
                     {/* Basic Info Tab */}
                     {activeTab === 'basic' && (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <div>
-                                <label className="block text-gray-700 font-semibold mb-2">Code</label>
-                                <input
-                                    type="text"
-                                    {...register("mastercodeForCus1", { required: true })}
-                                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    disabled={true}
-                                />
-                                {errors.exampleRequired && <span>This field is required</span>}
-                            </div>
+                            
                             <div>
                                 <label className="block text-gray-700 font-semibold mb-2">Account </label>
                                 <input
@@ -396,15 +387,7 @@ const ClientUpdate = () => {
 
                                 })} isDisabled={true} />
                             </div>
-                            <div>
-                                <label className="block text-gray-700 font-semibold mb-2">Terrotory</label>
-                                <Select value={({
-                                    value: Terrotory.find((item) => item._id == SelectTerrotory)._id,
-                                    label: Terrotory.find((item) => item._id == SelectTerrotory).TerrotoryName
-
-                                })} isDisabled={true} />
-                            </div>
-
+                            
 
                             <div>
                                 <label className="block text-gray-700 font-semibold mb-2"> Advance Tax Apply </label>

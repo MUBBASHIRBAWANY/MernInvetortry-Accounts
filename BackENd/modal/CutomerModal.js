@@ -5,9 +5,7 @@ import mongoose from "mongoose";
         type : String,
         required : true
     },
-    mastercodeForCus : {
-        type : String
-    },
+   
     CutomerName : {
         type: String,
         required : true,    

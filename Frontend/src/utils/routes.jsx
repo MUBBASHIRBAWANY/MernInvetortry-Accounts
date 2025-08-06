@@ -147,6 +147,10 @@ import CustomerChqAddPage from "../Pages/Accounts/CustomerChq/CustomerChqAddPage
 import Genrallager from "../Pages/Reports/Accounts/Genrallager/Genrallager"
 import SaleOrderListPage from "../Pages/SaleOrder/SaleOrderListPage"
 import SaleOrderAddPage from "../Pages/SaleOrder/SaleOrderAddPage"
+import SaleOrderEditPage from "../Pages/SaleOrder/SaleOrderEditPage"
+import SaleOrderViewPage from "../Pages/SaleOrder/SaleOrderViewPage"
+import OrderDCListPage from "../Pages/OrderDC/OrderDCListPage"
+import OrderDCAddPage from "../Pages/OrderDC/OrderDCAddPage"
 
 
 
@@ -744,6 +748,22 @@ const routes = [
      {
         path: "/SaleOrderAdd",
         component: <SaleOrderAddPage />
+    },
+    {
+        path: "/SaleOrderEdit/:id",
+        component: <SaleOrderEditPage />
+    },
+     {
+        path: "/SaleOrderView/:id",
+        component: <SaleOrderViewPage />
+    },
+         {
+        path: "/OrderDCList",
+        component: <OrderDCListPage />
+    },
+     {
+        path: "/OrderDCAdd",
+        component: <OrderDCAddPage />
     },
 ]
 

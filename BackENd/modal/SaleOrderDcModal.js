@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
-const SaleOrderSchema = new mongoose.Schema({
-    SaleOrderNumber: {
+const SaleOrderDcSchema = new mongoose.Schema({
+    DcNumber: {
         type: String,
         required: true
     },
@@ -9,12 +9,16 @@ const SaleOrderSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    SaleOrderData: {
+    DcData: {
         type: Array,
         required: true
     },
-    SaleOrderDate: {
+    DcDate: {
         type: String,
+        required: true
+    },
+    OrderNumber: {
+        type: Array,
         required: true
     },
     Location: {
@@ -27,18 +31,14 @@ const SaleOrderSchema = new mongoose.Schema({
     },
     Remarks: {
         type: String,
-    },
-    
-    OrderBookerId: {
-        type: String,
         required: true
     },
-    Status : {
+    Status: {
         type: String,
-        defaultvalue : false
+        default: false
     }
 })
 
-const SaleOrderModal = mongoose.model("SaleOrder", SaleOrderSchema)
+const SaleOrderDcModal = mongoose.model("SaleOrderDc", SaleOrderDcSchema)
 
-export default SaleOrderModal
+export default SaleOrderDcModal

@@ -18,10 +18,10 @@ const OderBookerAdd = () => {
   const navigate = useNavigate()
   const UserRihts = useSelector((state) => state.UsersRights.UserRights)
   
-  const Terrotory = useSelector((state) => state.Terrotory.Terrotory)
+  const Region = useSelector((state) => state.Region.Region)
 
   const pageName = "CategoryAdd"
-  const [prTerrotory, setPrTerrotory] = useState("")
+  const [prRegion, setPrRegion] = useState("")
   const checkAcess = async () => {
     console.log(UserRihts)
     const allowAcess = await UserRihts.find((item) => item == pageName)
@@ -32,7 +32,7 @@ const OderBookerAdd = () => {
   }
 
   const onSubmit = async (data) => {
-    data.Terrotory = prTerrotory
+    data.Region = prRegion
     console.log(data)
     try {
       const lastCode = await getDataFundtion(`/OrderBooker/lastcode`)
@@ -41,10 +41,10 @@ const OderBookerAdd = () => {
         data.code = "001"
       }
       else {
-        data.code = generateNextCodeForMsku(lastCode.data[0].code)
+        data.code = generateNextCodeForMsku(lastCode.data.code)
       }
       try {
-        data.masterCode = Terrotory.find((item) => item._id == prTerrotory).code + data.code
+        data.masterCode = Region.find((item) => item._id == prRegion).code + data.code
         const res = await createDataFunction('/OrderBooker', data)
         toast.success("Data Add")
         setTimeout(() => {
@@ -61,8 +61,8 @@ const OderBookerAdd = () => {
       toast.error('Some Thing Went Wrong')
     }
   }
-  const Terrotorydrp = Terrotory.map((item) => {
-    return { value: item._id, label: `${item.TerrotoryName} (${item.code})` }
+  const Regiondrp = Region.map((item) => {
+    return { value: item._id, label: `${item.RegionName} (${item.code})` }
   })
   return (
     <div className='mx-5'>
@@ -80,17 +80,10 @@ const OderBookerAdd = () => {
                 required
               />
             </div>
+           
             <div>
-              <label className="block text-gray-700 font-semibold mb-2">Sales Flow Ref </label>
-              <input
-                type="text"
-                {...register("salesFlowRef")}
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">Terrotory </label>
-              <Select onChange={(val) => setPrTerrotory(val.value)} options={Terrotorydrp} />
+              <label className="block text-gray-700 font-semibold mb-2">Region </label>
+              <Select onChange={(val) => setPrRegion(val.value)} options={Regiondrp} />
             </div>
             <div>
               <label className="block text-gray-700 font-semibold mb-2">Address </label>

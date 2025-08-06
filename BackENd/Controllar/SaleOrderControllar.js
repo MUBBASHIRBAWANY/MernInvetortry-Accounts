@@ -2,18 +2,19 @@ import SaleOrderModal from "../modal/SaleOrderModal.js"
 
 export const CreateSaleOrder = async (req, res) => {
     try {
-        
+
         const data = await SaleOrderModal.create(req.body)
         res.status(200).send("data Add")
     }
     catch (err) {
-console.log(err)
-        res.status(400).send("some thing went wrong" ,err)
+        console.log(err)
+        res.status(400).send("some thing went wrong", err)
     }
 }
 
 export const updateSaleOrder = async (req, res) => {
     const { id } = req.params
+    console.log(id)
     try {
         const data = await SaleOrderModal.findByIdAndUpdate(id, req.body)
         res.status(200).send("Data Edit")
@@ -52,4 +53,18 @@ export const deleteSaleOrder = async (req, res) => {
     catch (err) {
         res.status(400).send("some thing went wrong")
     }
+}
+
+
+export const updateOrderStatus = async (req, res) => {
+    const { id } = req.params
+    const { Status } = req.body
+    try {
+        const data = await SaleOrderModal.findByIdAndUpdate(id, {Status : Status})
+        res.status(200).send({ status: true, data: data });
+    } catch (err) {
+        res.status(400).send("some thing went wrong")
+
+    }
+
 }

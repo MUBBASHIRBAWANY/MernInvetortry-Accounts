@@ -116,7 +116,6 @@ const ClientList = () => {
 
   const columns = [
     { field: 'AccountCode', headerName: 'AccountCode' },
-    { field: 'mastercodeForCus', headerName: 'Customer code', width: 150, },
     { field: 'CutomerName', headerName: 'Customer Name', width: 250, },
     { field: 'Address', headerName: 'Address', width: 150, },
     { field: 'NTN', headerName: 'NTN', width: 150, },

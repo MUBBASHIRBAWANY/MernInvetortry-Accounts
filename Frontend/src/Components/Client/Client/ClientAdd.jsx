@@ -57,54 +57,23 @@ const ClientAdd = () => {
 
 
 
-    const AllZone = Zone.map((item) => {
-        return ({
-            value: item._id,
-            label: `${item.ZoneName} ${item.code}`,
-            code: item.code
-        })
-    })
-    const AllRegion = ZoneRegion.map((item) => ({
-        value: item._id,
-        label: `${item.RegionName} ${item.code}`,
-        code: item.code
 
-    }));
-    const CityDrp = RegionCity.map((item) => {
+    const CityDrp = City.map((item) => {
         return ({
             value: item._id,
             label: `${item.CityName} ${item.code}`,
             code: item.code
         })
     })
-    const AllTerrotory = CityTerrotory.map((item) => ({
-        value: item._id,
-        label: `${item.TerrotoryName} ${item.code}`,
-        code: item.code
-    }));
 
     const setDrp = (feild, value) => {
-        console.log(feild, value)
-        if (feild == "Zone") {
-            setSelectZone(value)
-            setSelectRegion("")
-            const reg = Region.filter((item) => item.Zone === value.value)
-            setZoneRegion(reg)
-        }
-        if (feild == "Region") {
-            setSelectRegion(value)
-            setSelectCity("")
-            console.log(City)
-            const Cit = City.filter((item) => item.Region === value.value)
-            setRegionCity(Cit)
-        }
-        if (feild == "City") {
-            setSelectCity(value)
-            setSelectTerrotory("")
-            console.log(Terrotory)
-            const Ter = Terrotory.filter((item) => item.City === value.value)
-            setCityTerrotory(Ter)
-        }
+        console.log(value)
+        setSelectCity(value)
+        const cit = City.find((item) => item._id === value.value)
+        const Reg =  Region.find((item) => item._id === cit.Region)
+        const Zon = Zone.find((item)=> item._id === Reg.Zone)
+        setSelectRegion(Reg)
+        setSelectZone(Zon)
     }
 
 
@@ -133,12 +102,9 @@ const ClientAdd = () => {
         const lastCode = await getDataFundtion(`/customer/lastCustomor`)
         console.log(lastCode.data)
         lastCode.data == null ? data.code = "0001" : data.code = generateNextCodeForCustomer(lastCode.data.code)
-        data.Terrotory = SelectTerrotory.value
-        data.Region = SelectRegion.value
-        data.Zone = selectZone.value
-        data.Terrotory = SelectTerrotory.value
+        data.Region = SelectRegion._id
+        data.Zone = selectZone._id
         data.City = selectCity.value
-        data.mastercodeForCus = selectZone.code + SelectRegion.code + selectZone.code + SelectTerrotory.code + data.code
         data.Stage3 = CustomerAccounts.value
         data.Stage = "4"
         data.AccountName = data.CutomerName
@@ -311,20 +277,8 @@ const ClientAdd = () => {
                     {activeTab === 'financial' && (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div>
-                                <label className="block text-gray-700 font-semibold mb-2">Zone</label>
-                                <Select options={AllZone} onChange={(val) => setDrp("Zone", val)} />
-                            </div>
-                            <div>
-                                <label className="block text-gray-700 font-semibold mb-2">Region</label>
-                                <Select onChange={(val) => setDrp("Region", val)} options={AllRegion} />
-                            </div>
-                            <div>
                                 <label className="block text-gray-700 font-semibold mb-2">City</label>
                                 <Select options={CityDrp} onChange={(val) => setDrp("City", val)} />
-                            </div>
-                            <div>
-                                <label className="block text-gray-700 font-semibold mb-2">Terrotory</label>
-                                <Select options={AllTerrotory} onChange={(val) => setSelectTerrotory(val)} />
                             </div>
 
 

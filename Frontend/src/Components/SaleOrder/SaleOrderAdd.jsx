@@ -14,7 +14,7 @@ import { generateNextCode, generateNextCodeForOrder } from '../Global/GenrateCod
 const SaleOrderAdd = () => {
     const navigate = useNavigate();
     const [poClient, setPoClient] = useState(null);
-    const [filterProduct, setFilterProduct] = useState([])
+    const [filterClinet, setFilterClinet] = useState([])
     const Client = useSelector((state) => state.Client.client)
     const Products = useSelector((state) => state.Product.product);
     const Vendor = useSelector((state) => state.Vendor.state)
@@ -23,19 +23,12 @@ const SaleOrderAdd = () => {
     const Store = useSelector((state) => state.Store.Store)
     const [AllProduct, SetAllProduct] = useState([])
     const [tableData, setTableData] = useState([]);
-    const [totalProduct, setTotalProduct] = useState([])
+    const [OderBooker, setOderBooker] = useState([])
     const [selectedLocation, setSelectedLocation] = useState([])
     const [salesLoction, setSalesLoction] = useState([])
     const [salesStore, setSalesStore] = useState([])
     const [storeDrp, setStoreDrp] = useState([])
-
-    const AllVendor = Vendor.filter((item, index) => loginVendor.Vendor[index])
-        .map((item1) => (item1.code))
-    console.log(loginVendor.Vendor)
-
-
-
-
+    const OrderBooker = useSelector((state) => state.OrderBooker.OrderBooker)
 
     const Location = location.filter(item => loginVendor.Location.includes(item._id))
         .map((item) => ({
@@ -71,7 +64,7 @@ const SaleOrderAdd = () => {
                 const checking = tableData.find((item) => item.id == id)
                 if (field == "product") {
                     if (checking.product != value) {
-                        updatedRow.Rate = 0
+                        updatedRow.rate = 0
                         updatedRow.carton = 0
                     }
                 }
@@ -83,7 +76,7 @@ const SaleOrderAdd = () => {
                 if (field == "product") {
                     updatedRow.unit == 0
                 }
-
+                updatedRow.Remaingcarton = updatedRow.carton
                 updatedRow.Amount = updatedRow.carton * updatedRow.rate
                 return updatedRow;
             }
@@ -98,13 +91,18 @@ const SaleOrderAdd = () => {
         data.SaleOrderData = tableData
         data.Store = salesStore.value,
         data.Location = salesLoction.value
+        data.OrderBookerName = OderBooker.label,
+        data.OrderBookerId = OderBooker.value
+        data.Status = "false"
+
+
         console.log(data)
         try {
-            const lastCode =  await getDataFundtion("/SaleOrder/lastcode")
-            console.log(lastCode.data.SaleOrderNumber)
-            
+            const lastCode = await getDataFundtion("/SaleOrder/lastcode")
+            console.log(lastCode.data)
+
             lastCode.data == null ? data.SaleOrderNumber = "000001" : data.SaleOrderNumber = generateNextCodeForOrder(lastCode.data.SaleOrderNumber)
-            
+
             const res = await createDataFunction('/SaleOrder', data)
             console.log(res)
             toast.success("Sales Invoice Add")
@@ -114,8 +112,9 @@ const SaleOrderAdd = () => {
             }, 2000)
         }
         catch (err) {
+            console.log(err)
+            toast.error("some went gone wrong")
             const error = err.response.data.errors
-            console.log(error)
             if (error) {
 
                 try {
@@ -154,7 +153,7 @@ const SaleOrderAdd = () => {
         }));
     }
 
-    const startingClient = Client.slice(0, 50).map((item) => ({
+    const startingClient = filterClinet.slice(0, 50).map((item) => ({
         label: `${item.CutomerName} ${item.code}`,
         value: item._id
     }));;
@@ -184,7 +183,8 @@ const SaleOrderAdd = () => {
     const defultStore = Store.find((item) => item._id == loginVendor.Store[0])
     const selectedStore = {
         label: defultStore?.StoreName,
-        value: defultStore?._id
+        value: defultStore?._id,
+
     }
 
     const setDrp = (value) => {
@@ -204,6 +204,20 @@ const SaleOrderAdd = () => {
         console.log(storeDrp)
     }
 
+    const setClient = (value) => {
+        setOderBooker(value)
+        const RegClint = Client.filter((item) => item.Region === value.Region)
+
+        console.log(RegClint)
+        setFilterClinet(RegClint)
+    }
+
+    const OrderBookerDrp = OrderBooker.map((item) => ({
+        value: item._id,
+        label: item.OrderBookerName,
+        Region: item.Region
+    }))
+
     return (
         <div className="p-4  ">
             <ToastContainer />
@@ -219,7 +233,10 @@ const SaleOrderAdd = () => {
                             className="w-full px-3 py-2 text-sm md:text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
-
+                    <div>
+                        <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Order Booker</label>
+                        <Select  isDisabled={tableData.length === 0 ? false : true} onChange={(v) => setClient(v)} options={OrderBookerDrp} />
+                    </div>
                     <div>
                         <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Client</label>
                         <AsyncSelect
@@ -260,6 +277,15 @@ const SaleOrderAdd = () => {
                         <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Store</label>
                         <Select onChange={(v) => setSalesStore(v)} value={salesStore} options={storeDrp} />
                     </div>
+                    <div className="md:col-span-2 lg:col-span-2">
+                        <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Remarks</label>
+                        <input
+                            type="text"
+                            {...register("Remarks")}
+                            className="w-full py-3 text-sm md:text-base border rounded-lg"
+                        />
+                    </div>
+
                 </div>
 
                 <div className="overflow-x-auto mb-6">

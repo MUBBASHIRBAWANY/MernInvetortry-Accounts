@@ -11,13 +11,13 @@ import DialogTitle from '@mui/material/DialogTitle';
 import { toast, ToastContainer } from 'react-toastify';
 import { deleteDataFunction, getDataFundtion } from '../../Api/CRUD Functions';
 import { fetchOrderBooker } from '../../Redux/Reducers/OrderBookerReducer';
-import { fetchTerrotory } from '../../Redux/Reducers/TerrotoryReducer';
+import { fetchRegion } from '../../Redux/Reducers/RegionReducer';
 
 const OderBookerList = () => {
   const [rows, setRows] = useState();
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
-  const [Terrotory, setTerrotory] = useState()
+  const [Region, setRegion] = useState()
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const UserRihts = useSelector((state) => state.UsersRights.UserRights)
@@ -25,11 +25,11 @@ const OderBookerList = () => {
   const getData = async () => {
     try {
       const data = await getDataFundtion("/OrderBooker")
-      const Terrotory = await getDataFundtion("/Terrotory")
-      setTerrotory(Terrotory.data)
+      const Region = await getDataFundtion("/Region")
+      setRegion(Region.data)
       const list = data.data
       dispatch(fetchOrderBooker(list))
-      dispatch(fetchTerrotory(Terrotory.data))
+      dispatch(fetchRegion(Region.data))
       setRows(list)
     } catch (err) {
       console.log(err)
@@ -60,15 +60,13 @@ const OderBookerList = () => {
   };
   const columns = [
 
-    { field: 'masterCode', headerName: 'Master Code', width: 250, },
     { field: 'code', headerName: 'Order Booker Code', width: 250, },
     { field: 'OrderBookerName', headerName: 'Name', width: 450, },
-    { field: 'salesFlowRef', headerName: 'Sales Flow Ref', width: 250, },
 
     {
-      field: 'Terrotory', headerName: 'Terrotory', width: 200, renderCell: (params) => {
-        const Terrotory1 = Terrotory.find(Terrotory => Terrotory._id == params.formattedValue);
-        return Terrotory1 ? `${Terrotory1.TerrotoryName} (${Terrotory1.code})` : 'No Master Sku';
+      field: 'Region', headerName: 'Region', width: 200, renderCell: (params) => {
+        const Region1 = Region.find(Region => Region._id == params.formattedValue);
+        return Region1 ? `${Region1.RegionName} (${Region1.code})` : 'No Master Sku';
       }
     },
     {

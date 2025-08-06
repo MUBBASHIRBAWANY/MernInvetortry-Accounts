@@ -19,6 +19,7 @@ import { fetchLocation } from '../../Redux/Reducers/LocationReducer';
 import { fetchStore } from '../../Redux/Reducers/StoreReducer';
 import { fetchChartofAccounts } from '../../Redux/Reducers/ChartofAccountsReduser';
 import { fetchClient } from '../../Redux/Reducers/ClientReducer';
+import { fetchOrderBooker } from '../../Redux/Reducers/OrderBookerReducer.js';
 
 const SaleOrderList = () => {
     const [rows, setRows] = useState();
@@ -29,7 +30,7 @@ const SaleOrderList = () => {
     const dispatch = useDispatch()
     const UserRihts = useSelector((state) => state.UsersRights.UserRights)
     const category = useSelector((state) => state.Category.category)
-    const Vendor = useSelector((state) => state.Vendor.state)
+    const OrderBooker = useSelector((state) => state.OrderBooker.OrderBooker)
     const Store = useSelector((state) => state.Store.Store)
     const Customer = useSelector((state) => state.Client.client)
     console.log(Store)
@@ -45,7 +46,7 @@ const SaleOrderList = () => {
             const loction = await getDataFundtion('/Location')
             const Store = await getDataFundtion("/store")
             const Accounts = await getDataFundtion('/ChartofAccounts')
-
+            const OderBooker = await getDataFundtion('/orderbooker')
             const list = data.data
             const SaleOrderSorted = [...list].sort((a, b) => a.SaleOrder - b.SaleOrder)
             console.log(SaleOrderSorted)
@@ -55,6 +56,7 @@ const SaleOrderList = () => {
             dispatch(fetchStore(Store.data))
             dispatch(fetchClient(Client.data))
             dispatch(fetchSaleOrder(SaleOrderSorted))
+            dispatch(fetchOrderBooker(OderBooker.data))
             setLoading(false)
             setRows(list)
         } catch (err) {
@@ -133,6 +135,16 @@ const SaleOrderList = () => {
             width: 200,
         },
         {
+            field: 'OrderBookerId',
+            headerName: 'Order Booker',
+            width: 200,
+            renderCell: (params) => {
+                const OrderBookerId1 = OrderBooker.find(Store => Store._id === params.value);
+                return OrderBookerId1 ? `${OrderBookerId1.OrderBookerName} (${OrderBookerId1.code})` : 'Store Not Found';
+            },
+
+        },
+        {
             field: 'Store',
             headerName: 'Store',
             width: 100,
@@ -164,6 +176,12 @@ const SaleOrderList = () => {
             width: 250,
             renderCell: (params) =>
                 params.row.SaleOrderData?.reduce((sum, item) => sum + Number(item.Amount), 0).toFixed(2) || 0
+        },
+        {
+            field: 'Status',
+            headerName: 'Status',
+            width: 200,
+
         },
         {
             field: 'actions',
