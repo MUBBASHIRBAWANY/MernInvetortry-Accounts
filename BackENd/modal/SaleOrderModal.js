@@ -27,7 +27,7 @@ const SaleOrderSchema = new mongoose.Schema({
     },
     Remarks: {
         type: String,
-    },
+        },
     
     OrderBookerId: {
         type: String,

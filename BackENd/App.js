@@ -43,6 +43,7 @@ import GernalLagerRouter from "./Routes/GernalLagerReportRoutes.js"
 import compression from "compression"
 import ZoneRouter from "./Routes/ZoneRoute.js"
 import SaleOrderRouter from "./Routes/SaleOrderRoutes.js"
+import SaleOrderDcRouter from "./Routes/SaleOrderDcRoutes.js"
 const Router = express.Router()
 const app = express();
 app.use(cors());
@@ -80,3 +81,4 @@ export const VoucherRoute  = app.use('/Voucher', VoucherRouter);
 export const GernalLager = app.use("/GernalLager" , GernalLagerRouter)
 export const ZoneRoute = app.use("/Zone" , ZoneRouter)
 export const SaleOrderRoute = app.use("/SaleOrder" , SaleOrderRouter)
+export const DcOrderROute = app.use("/DcOrder" , SaleOrderDcRouter)

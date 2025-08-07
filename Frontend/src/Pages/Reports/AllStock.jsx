@@ -123,15 +123,10 @@ const StockReport = () => {
           <thead className="bg-gray-100 text-gray-700 text-left text-sm uppercase tracking-wider">
             <tr>
               <th className="px-[1%] py-3">#</th>
-              <th className="px-[1%] py-3">Vendor</th>
               <th className="px-[1%]   py-3">Store</th>
               <th className="px-[1%]   py-3">Location</th>
-              <th className="px-[1%]   py-3">Product Code</th>
               <th className="px-[1%]   py-3">Product</th>
-              <th className="px-[1%]   py-3">SalesFlowRef</th>
               <th className="px-[1%] py-3">Carton</th>
-              <th className="px-[1%] py-3">Boxes</th>
-              <th className="px-[1%] py-3">Total Boxes</th>
 
             </tr>
           </thead>
@@ -139,16 +134,11 @@ const StockReport = () => {
             {stockData.map((item, index) => (
               <tr key={item._id} className="hover:bg-gray-50">
                 <td className="px-[1%] py-4 font-medium text-gray-700">{index + 1}</td>
-                <td className="px-[1%] py-4 text-blue-700">{vendor.find((item1) => item1.code == product.find((item1) => item1._id == item.ProductName)?.mastercode.slice(0, 2))?.VendorName}</td>
                 <td className="px-[1%] py-4 text-blue-700">{AllStore.find((item1) => item1._id == item.Store)?.StoreName}</td>
                 <td className="px-[1%] py-4 text-blue-700">{AllLocation.find((item1) => item1._id == item.Location)?.LocationName}</td>
-                <td className="px-[1%] py-4 text-blue-700">{product.find((item1) => item1._id == item.ProductName)?.mastercode}</td>
                 <td className="px-[1%] py-4 text-blue-700">{product.find((item1) => item1._id == item.ProductName)?.ProductName}</td>
-                <td className="px-[1%] py-4 text-blue-700">{product.find((item1) => item1._id == item.ProductName)?.salesFlowRef}</td>
-
-                <td className="px-[1%] py-4 text-green-600 font-semibold">{((item.TotalQuantity / product.find((item1) => item1._id == item.ProductName)?.BoxinCarton).toString()).split('.')[0]}</td>
-                <td className="px-[1%] py-4 text-green-600 font-semibold">{((product.find((item1) => item1._id == item.ProductName)?.BoxinCarton) * (`.` + (((item.TotalQuantity / product.find((item1) => item1._id == item.ProductName)?.BoxinCarton).toString()).split('.')[1] || 0))).toFixed(0)}</td>
                 <td className="px-[1%] py-4 text-blue-700">{item.TotalQuantity}</td>
+                
 
               </tr>
             ))}
@@ -156,9 +146,6 @@ const StockReport = () => {
           <tfoot className="bg-gray-50 text-gray-800 text-sm font-semibold">
             <tr>
               <td className="px-[1%] py-3" colSpan="2">Total Stock</td>
-              <td className="px-[1%] py-3"></td>
-              <td className="px-[1%] py-3"></td>
-              <td className="px-[1%] py-3"></td>
               <td className="px-[1%] py-3"></td>
               <td className="px-[1%] py-3"></td>
               <td className="px-[1%] py-3">
@@ -170,20 +157,6 @@ const StockReport = () => {
                     return acc + cartons;
                   }, 0)
                 }
-              </td>
-              <td className="px-[1%] py-3">
-                {
-                  stockData.reduce((acc, item) => {
-                    const productItem = product.find((p) => p._id === item.ProductName);
-                    const boxInCarton = productItem?.BoxinCarton || 1;
-                    const fractionalPart = item.TotalQuantity / boxInCarton;
-                    const boxes = Math.round((fractionalPart % 1) * boxInCarton);
-                    return acc + boxes;
-                  }, 0)
-                }
-              </td>
-              <td className="px-6 py-3">
-
               </td>
             </tr>
           </tfoot>

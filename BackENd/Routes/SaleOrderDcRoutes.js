@@ -1,14 +1,14 @@
 import express from "express";
 import { CreateSaleOrderDC, DeleteSaleOrderDC, GetAllSaleOrderDC, LastSaleOrderDC, updateOrderStatusDC, UpdateSaleOrderDC } from "../Controllar/SaleOrderDcControllar.js";
-const SaleOrderRouter = express.Router()
+const SaleOrderDcRouter = express.Router()
 
 
-SaleOrderRouter.post('/', CreateSaleOrderDC )
-SaleOrderRouter.put('/updateSaleOrder/:id', UpdateSaleOrderDC)
-SaleOrderRouter.get("/", GetAllSaleOrderDC)
-SaleOrderRouter.get("/lastcode", LastSaleOrderDC)
-SaleOrderRouter.delete("/deleteSaleOrder/:id", DeleteSaleOrderDC)
-SaleOrderRouter.put("/ChangeStatus/:id" , updateOrderStatusDC)
+SaleOrderDcRouter.post('/', CreateSaleOrderDC )
+SaleOrderDcRouter.put('/updateSaleOrder/:id', UpdateSaleOrderDC)
+SaleOrderDcRouter.get("/", GetAllSaleOrderDC)
+SaleOrderDcRouter.get("/lastcode", LastSaleOrderDC)
+SaleOrderDcRouter.delete("/deleteSaleOrder/:id", DeleteSaleOrderDC)
+SaleOrderDcRouter.put("/ChangeStatus/:id" , updateOrderStatusDC)
 
 
-export default SaleOrderRouter
+export default SaleOrderDcRouter

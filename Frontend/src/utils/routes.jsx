@@ -151,6 +151,8 @@ import SaleOrderEditPage from "../Pages/SaleOrder/SaleOrderEditPage"
 import SaleOrderViewPage from "../Pages/SaleOrder/SaleOrderViewPage"
 import OrderDCListPage from "../Pages/OrderDC/OrderDCListPage"
 import OrderDCAddPage from "../Pages/OrderDC/OrderDCAddPage"
+import OrderDCEditPage from "../Pages/OrderDC/OrderDCEditPage"
+import OrderDCViewPage from "../Pages/OrderDC/OrderDCViewPage"
 
 
 
@@ -765,6 +767,15 @@ const routes = [
         path: "/OrderDCAdd",
         component: <OrderDCAddPage />
     },
+     {
+        path: "/OrderDCEdit/:id",
+        component: <OrderDCEditPage />
+    },
+    {
+        path: "/OrderDCView/:id",
+        component: <OrderDCViewPage />
+    },
+
 ]
 
 export default routes

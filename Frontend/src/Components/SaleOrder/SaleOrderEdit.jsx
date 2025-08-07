@@ -21,7 +21,7 @@
         const Vendor = useSelector((state) => state.Vendor.state)
         const location = useSelector((state) => state.Location.Location)
         const loginVendor = useSelector((state) => state.LoginerReducer.userDetail)
-        const Store = useSelector((state) => state.Store.Store)
+        const Store = useSelector((state) => state.Store.Store) 
         const [AllProduct, SetAllProduct] = useState([])
         const [tableData, setTableData] = useState([]);
         const [OderBooker, setOderBooker] = useState([])

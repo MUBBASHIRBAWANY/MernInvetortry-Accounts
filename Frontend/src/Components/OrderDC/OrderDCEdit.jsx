@@ -1,18 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { createDataFunction, getDataFundtion } from '../../Api/CRUD Functions';
+import { createDataFunction, getDataFundtion, updateDataFunction } from '../../Api/CRUD Functions';
 import AsyncSelect from 'react-select/async';
 import Select from 'react-select'
 import { generateNextCode, generateNextCodeForOrder } from '../Global/GenrateCode';
 
 
 
-const OrderDCAdd = () => {
+const OrderDCEdit = () => {
   const navigate = useNavigate();
+  const {id} = useParams()
   const [poClient, setPoClient] = useState(null);
   const Client = useSelector((state) => state.Client.client)
   const Products = useSelector((state) => state.Product.product);
@@ -22,35 +23,21 @@ const OrderDCAdd = () => {
   const [SaleOrderDrp, SetSaleOrderDrp] = useState([])
   const [tableData, setTableData] = useState([]);
   const [OderBooker, setOderBooker] = useState([])
-  const [selectedLocation, setSelectedLocation] = useState([])
-  const [salesStore, setSalesStore] = useState([])
-  const [storeDrp, setStoreDrp] = useState([])
-  const [selectedStore, setSelectedStore] = useState([])
   const OrderBooker = useSelector((state) => state.OrderBooker.OrderBooker)
   const Order = useSelector((state) => state.SaleOrder.SaleOrder)
+  const OrderDc = useSelector((state)=> state.OrderDc.OrderDc)
   const Location = location.filter(item => loginVendor.Location.includes(item._id))
 
 
 
 
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const { register, handleSubmit, formState: { errors } , reset } = useForm();
 
-  const addNewRow = () => {
-    if (!poClient) {
-      return toast.error("first Select Client ")
-    }
-
-    setTableData([...tableData, {
-      id: Date.now(),
-      product: '',
-      carton: 0,
-      Delivered : 0
-    }]);
-  };
-
+  
   const getSaleOrder = (value) => {
+    
     setPoClient(value)
-    const data = Order.filter((item) => item.Customer == value.value)
+    const data = Order.filter((item) => item.Customer == value.value || value)
       ?.map((item) => ({
         value: item.SaleOrderNumber,
         label: item.SaleOrderNumber,
@@ -125,14 +112,15 @@ const handleCellChange = (id, field, value) => {
 
         // If Delivered changed, update Remaingcarton
         if (field === "Delivered") {
-          const deliveredValue = parseFloat(value) || 0;
+         const deliveredValue = parseFloat(value) || 0;
           const cartonValue = parseFloat(updatedRow.carton) || 0;
           updatedRow.Remaingcarton = cartonValue - deliveredValue;
         }
 
-        
+       
 
         // Only update Amount when carton or rate changes
+        updatedRow.Amount = updatedRow.carton * updatedRow.rate;
 
         return updatedRow;
       }
@@ -156,18 +144,10 @@ const handleCellChange = (id, field, value) => {
     data.Store = loginVendor.Store[0]
     data.Status = "false"
     try {
-      const lastCode = await getDataFundtion("/DcOrder/lastcode")
-      console.log(lastCode.data)
-      lastCode.data.length == 0 ? data.DcNumber = "000001" : data.DcNumber = generateNextCodeForOrder(lastCode.data[0].DcNumber)
-      
-      console.log(data)
-
-
-      const res = await createDataFunction('/DcOrder', data)
+      const res = await updateDataFunction(`/DcOrder/updateSaleOrder/${id}`, data)
       console.log(res)
-      toast.success("Sales Invoice Add")
+      toast.success("Sales Order Edit")
       setTimeout(() => {
-
         navigate('/OrderDCList')
       }, 2000)
     }
@@ -212,10 +192,31 @@ const handleCellChange = (id, field, value) => {
   }));;
 
 
+const getData = () =>{
+const data = OrderDc.find((item)=> item._id === id)
+const client = Client.filter((item)=> item._id == data.Customer).map((val)=> ({
+  value : val._id,
+  label :val.CutomerName
+}))
+console.log(client)
+setTableData(data.DcData)
+getSaleOrder(data.Customer)
+setPoClient(client)
+reset({
+  salesInvoice  : data.DcNumber,
+  DcDate : data.DcDate,
+  Remarks : data.Remarks
+})
+
+}
+useEffect(()=>{
+  getData()
+},[])
+
   return (
     <div className="p-4  ">
       <ToastContainer />
-      <h1 className="text-xl md:text-3xl font-bold text-center text-gray-800 mb-6">Create Delivery Order</h1>
+      <h1 className="text-xl md:text-3xl font-bold text-center text-gray-800 mb-6">Edit Delivery Order</h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-4 md:p-6 rounded-lg shadow-md">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -253,7 +254,7 @@ const handleCellChange = (id, field, value) => {
             <input
               type="text"
               disabled
-              defaultValue={''}
+              
               {...register("salesInvoice")}
               className="w-full px-3 py-2 text-sm md:text-base border rounded-lg bg-gray-100"
             />
@@ -297,7 +298,7 @@ const handleCellChange = (id, field, value) => {
                   <td className="border p-2">
                     <input
                       type="number"
-                      value={row.delivered}
+                      value={row.Delivered}
                       onChange={(e) => handleCellChange(row.id, 'Delivered', e.target.value)}
                       className="w-full p-1 text-xs md:text-sm border rounded"
                     />
@@ -348,12 +349,12 @@ const handleCellChange = (id, field, value) => {
             type="submit"
             className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm md:text-base"
           >
-            Create Order Dc
+            Edit Order Dc
           </button>
         </div>
       </form>
     </div>
-  )
+ )
 }
 
-export default OrderDCAdd
+export default OrderDCEdit

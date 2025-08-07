@@ -1,9 +1,9 @@
 import React from 'react'
 import SaleOrderList from '../../Components/SaleOrder/SaleOrderList'
 import { Link } from 'react-router-dom'
-import SaleOrderPost from '../../Components/SaleOrder/SaleOrderPostModal'
-import SaleOrderUnPost from '../../Components/SaleOrder/SaleOrderUnPostModal'
 import OrderDCList from '../../Components/OrderDC/OrderDCList'
+import OrderDCPostModal from '../../Components/OrderDC/OrderDCPostModal'
+import OrderDCUnPostModal from '../../Components/OrderDC/OrderDCUnPostModal'
 
 const OrderDCListPage = () => {
   return (
@@ -15,10 +15,10 @@ const OrderDCListPage = () => {
           </button>
         </Link>
         <span className='ml-[50%]' >
-          <SaleOrderPost />
+          <OrderDCPostModal />
         </span>
         <span className='px-[1vw]'>
-          <SaleOrderUnPost />
+          <OrderDCUnPostModal />
         </span>
       </div>
       <OrderDCList />

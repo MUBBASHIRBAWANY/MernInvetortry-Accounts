@@ -31,7 +31,6 @@ const SaleOrderDcSchema = new mongoose.Schema({
     },
     Remarks: {
         type: String,
-        required: true
     },
     Status: {
         type: String,
