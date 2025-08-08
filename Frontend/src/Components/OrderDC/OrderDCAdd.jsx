@@ -44,13 +44,13 @@ const OrderDCAdd = () => {
       id: Date.now(),
       product: '',
       carton: 0,
-      Delivered : 0
+      Delivered: 0
     }]);
   };
 
   const getSaleOrder = (value) => {
     setPoClient(value)
-    const data = Order.filter((item) => item.Customer == value.value)
+    const data = Order.filter((item) => item.Customer == value.value && item.Status == "false")
       ?.map((item) => ({
         value: item.SaleOrderNumber,
         label: item.SaleOrderNumber,
@@ -58,6 +58,7 @@ const OrderDCAdd = () => {
         OrderBooker: item.OrderBookerId,
         Location: item.Location,
         Store: item.Store,
+        Status : item.Status,
         id: Date.now() + Math.random()
       }))
       .filter((val => loginVendor.Store.includes(val.Store)))
@@ -95,51 +96,50 @@ const OrderDCAdd = () => {
 
   }
 
-const handleCellChange = (id, field, value) => {
-  setTableData((prevData) =>
-    prevData.map((row) => {
-      if (row.id === id) {
-        const updatedRow = { ...row, [field]: value };
-        updatedRow.product = updatedRow.product.value || updatedRow.product;
+  const handleCellChange = (id, field, value) => {
+    setTableData((prevData) =>
+      prevData.map((row) => {
+        if (row.id === id) {
+          const updatedRow = { ...row, [field]: value };
+          updatedRow.product = updatedRow.product.value || updatedRow.product;
 
-        const checking = prevData.find((item) => item.id == id);
+          const checking = prevData.find((item) => item.id == id);
 
-        if (field === "product") {
-          if (checking.product !== value) {
-            updatedRow.rate = 0;
+          if (field === "product") {
+            if (checking.product !== value) {
+              updatedRow.rate = 0;
+              updatedRow.carton = 0;
+              updatedRow.Delivered = 0;
+            }
+            const findProduct = Products.find((item) => item._id === updatedRow.product);
+            if (findProduct) {
+              updatedRow.unit = 0; // Or actual value if needed
+            }
+          }
+
+          // Reset fields if product is empty
+          if (!updatedRow.product) {
+            updatedRow.Amount = 0;
             updatedRow.carton = 0;
-            updatedRow.Delivered = 0;
           }
 
-          const findProduct = Products.find((item) => item._id === updatedRow.product);
-          if (findProduct) {
-            updatedRow.unit = 0; // Or actual value if needed
+          // If Delivered changed, update Remaingcarton
+          const Remainng = updatedRow.Remaingcarton
+          if (field == "Delivered") {
+            updatedRow.Delivered = value
+
           }
+
+
+
+          // Only update Amount when carton or rate changes
+
+          return updatedRow;
         }
-
-        // Reset fields if product is empty
-        if (!updatedRow.product) {
-          updatedRow.Amount = 0;
-          updatedRow.carton = 0;
-        }
-
-        // If Delivered changed, update Remaingcarton
-        if (field === "Delivered") {
-          const deliveredValue = parseFloat(value) || 0;
-          const cartonValue = parseFloat(updatedRow.carton) || 0;
-          updatedRow.Remaingcarton = cartonValue - deliveredValue;
-        }
-
-        
-
-        // Only update Amount when carton or rate changes
-
-        return updatedRow;
-      }
-      return row;
-    })
-  );
-};
+        return row;
+      })
+    );
+  };
 
   const TotalAmount = tableData.reduce((sum, row) => sum + (parseFloat(row.Amount) || 0), 0);
   const totalCarton = tableData.reduce((sum, row) => sum + (parseInt(row.carton) || 0), 0);
@@ -147,7 +147,7 @@ const handleCellChange = (id, field, value) => {
   const onSubmit = async (data) => {
     const checke = tableData.filter(obj => !obj.hasOwnProperty("Delivered"))
     console.log(checke)
-    if(checke.length !== 0 ){
+    if (checke.length !== 0) {
       return toast.error("Please enter Delivered value ")
     }
     data.Customer = poClient.value
@@ -159,7 +159,7 @@ const handleCellChange = (id, field, value) => {
       const lastCode = await getDataFundtion("/DcOrder/lastcode")
       console.log(lastCode.data)
       lastCode.data.length == 0 ? data.DcNumber = "000001" : data.DcNumber = generateNextCodeForOrder(lastCode.data[0].DcNumber)
-      
+
       console.log(data)
 
 
@@ -303,7 +303,7 @@ const handleCellChange = (id, field, value) => {
                     />
                   </td>
                   <td className="border p-2">
-                    {row.Remaingcarton || 0}
+                    {row.Remaingcarton - row.Delivered || row.Remaingcarton }
                   </td>
                   <td className="border p-2 hidden md:table-cell">
                     {OrderBooker.find((item) => item._id === row.OrderBooker).OrderBookerName}

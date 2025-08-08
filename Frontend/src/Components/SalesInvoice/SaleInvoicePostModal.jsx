@@ -16,6 +16,9 @@ const SaleInvoicePostModal = () => {
     const dispatch = useDispatch()
     const [submit, setSubmit] = useState(false)
     const invoices = useSelector((state) => state.SalesInvoice.SalesInvoice)
+    const Accounts = useSelector((state) => state.ChartofAccounts.ChartofAccounts);
+      const Client = useSelector((state) => state.Client.client)
+    
 
     const loadInvoiceOptions = async (inputValue) => {
         if (!inputValue) return [];
@@ -56,20 +59,32 @@ const SaleInvoicePostModal = () => {
             console.log(filtervalues)
             const allTrue = filtervalues.filter((item) => item.PostStatus !== true).map((item) => {
                 return ({
-                    SalesInvoice: item.SalesInvoice,
                     id: item._id,
                     status: true,
-                    data: item.SalesData,
-                    Location : item.Location,
-                    Store : item.Store,
-                    inv : item.SalesInvoice
+
+                    AccountsData: [
+                        {
+                            VoucherType: "SL",
+                            VoucherNumber: `Sl${item.SalesInvoice}`,
+                            VoucherDate: item.SalesInvoiceDate,
+                            status: "Post",
+                            VoucharData: [
+                                {
+                                    Account: Accounts.find((Ac)=> Ac.AccountCode === Client.find((C)=> C._id === item.Client).AccountCode)._id,
+                                    Debit : Number(item.TotalAmount) - Number(item.AddAmount || 0) + Number(item.LessAmount || 0),
+                                    Store : item.Store,
+                                }
+                            ]
+
+                        }
+                    ]
                 })
             })
             console.log(allTrue)
             for (const item of allTrue) {
                 try {
-                    const res = await updateDataFunction(`SaleInvoice/ChangeStatus/${item.id}`, item)
-                    dispatch(updateDateSalesInvoice(item))
+                    // const res = await updateDataFunction(`SaleInvoice/ChangeStatus/${item.id}`, item)
+                    // dispatch(updateDateSalesInvoice(item))
                 } catch (err) {
 
                     const error = err?.response?.data?.errors

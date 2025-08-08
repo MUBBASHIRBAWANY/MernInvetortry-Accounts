@@ -6,6 +6,7 @@ import Select from 'react-select';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { createDataFunction, updateDataFunction } from '../../Api/CRUD Functions';
+import AsyncSelect from 'react-select/async';
 
 const SalesInvoiceEdit = () => {
   const navigate = useNavigate();
@@ -17,9 +18,23 @@ const SalesInvoiceEdit = () => {
   const findInvoice = SalesInvoice.find((item) => item._id == id)
   const location = useSelector((state) => state.Location.Location)
   const Store = useSelector((state) => state.Store.Store)
-  console.log(findInvoice)
+  const [selectedOrderBooker, SetselectedOrderBooker] = useState([])
+  const [selecetLoction, setSelecetLoction] = useState([])
+  const [selecetStore, setSelecetStore] = useState([])
+  const [DcClient, setDcClient] = useState([])
+  const [SaleOrderDc, setSaleOrderDc] = useState([])
+  const [SelectedDC, setSelectedDC] = useState([])
+  const [lessAccount, setlessAccount] = useState("")
+  const [AddAccount, setAddAccount] = useState("")
+  const [AddAmount, setAddAmount] = useState(0)
+  const [LessAmount, setLessAmount] = useState(0)
+  const OrderDc = useSelector((state) => state.OrderDc.OrderDc)
+  const Accounts = useSelector((state) => state.ChartofAccounts.ChartofAccounts);
+
+  const filteredAccount = Accounts.filter((item) => item.AccountCode.length > 5)
+
   const [tableData, setTableData] = useState([]);
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const { register, handleSubmit, formState: { errors }, reset } = useForm();
   const AllProduct = {
     options: Products.map((item) => ({ value: item._id, label: `${item.code} ${item.ProductName}` })),
   };
@@ -27,45 +42,68 @@ const SalesInvoiceEdit = () => {
   const AllClient = {
     options: Client.map((item) => ({ value: item._id, label: item.CutomerName })),
   };
+  const loadAccounts = async (inputValue) => {
+    if (!inputValue) return [];
 
-  const addNewRow = () => {
-    if (!poClient) {
-      return toast.error("first Select Client ")
-    }
-    setTableData([...tableData, {
-      id: Date.now(),
-      product: '',
-      box: 0,
-      carton: 0,
-      Gst: 0
-    }]);
-  };
-  const removeRow = (id) => {
-    setTableData(tableData.filter(row => row.id !== id));
-  };
+    const filtered = filteredAccount
+      .filter((item) =>
+        item.AccountName.toLowerCase().includes(inputValue.toLowerCase()) || item.AccountCode.toLowerCase().includes(inputValue.toLowerCase())
+      )
+      .slice(0, 50);
+
+    return filtered.map((item) => ({
+      label: `${item.AccountCode} ${item.AccountName}`,
+      value: item._id
+    }));
+  }
+
+  const startingAccount = filteredAccount.slice(0, 50).map((item) => ({
+    label: `${item.AccountCode} ${item.AccountName}`,
+    value: item._id
+  }));;
+
   const findClient = Client.find((item) => item._id == findInvoice.Client)
   const defultClient = {
     label: findClient.CutomerName,
     value: findClient._id
   }
 
-const findLocation = location.find((item)=> findInvoice.Location)
-const disableLocation = {
-  label : findLocation.LocationName,
-  value : findLocation._id
-}
-const findStore = Store.find((item)=> findInvoice.Store)
-const disableStore = {
-  label : findStore.StoreName,
-  value : findStore._id
-}
+  const findLocation = location.find((item) => findInvoice.Location)
+  const disableLocation = {
+    label: findLocation.LocationName,
+    value: findLocation._id
+  }
+  const findStore = Store.find((item) => findInvoice.Store)
+  const disableStore = {
+    label: findStore.StoreName,
+    value: findStore._id
+  }
   useEffect(() => {
     setPoClient(defultClient.value)
     setTableData(findInvoice.SalesData)
+    setSelectedDC(findInvoice.DcNumber)
+    reset({
+      SaleInvoiceDate: findInvoice.SalesInvoiceDate,
+      LessAmount: findInvoice.LessAmount,
+      AddAmount: findInvoice.AddAmount
+    })
+    setAddAccount(findInvoice.AddAccount)
+    setlessAccount(findInvoice.LessAccount)
+    setAddAmount(findInvoice.AddAmount)
+    setLessAmount(findInvoice.LessAmount)
   }, [])
+
+  const totalAmount = tableData.reduce((sum, row) => sum + (parseFloat(row.netAmunt) || 0), 0);
+
+  let totalNetAmount = totalAmount + Number(AddAmount) - Number(LessAmount)
+
   const onSubmit = async (data) => {
-    data.Client = poClient
     data.SaleInvoiceData = tableData
+    data.AddAccount = AddAccount,
+    data.LessAccount = lessAccount
+    data.RemainingAmount = totalNetAmount,
+    data.TotalAmount = totalNetAmount
+
     console.log(data)
     try {
       const res = await updateDataFunction(`SaleInvoice/UpdateSalesInvoice/${id}`, data)
@@ -91,155 +129,71 @@ const disableStore = {
       }
     }
   }
+  const loadclients = async (inputValue) => {
+    if (!inputValue) return [];
 
+    const filtered = AllClient
+      .filter((item) =>
+        item.CutomerName.toLowerCase().includes(inputValue.toLowerCase()) || item.code.toLowerCase().includes(inputValue.toLowerCase())
+      )
+      .slice(0, 50);
+
+    return filtered.map((item) => ({
+      label: `${item.CutomerName} ${item.code}`,
+      value: item._id
+    }));
+  }
+
+  const startingClient = Client.slice(0, 50).map((item) => ({
+    label: `${item.CutomerName} ${item.code}`,
+    value: item._id
+  }));;
   const handleCellChange = (id, field, value) => {
-
+    console.log(field)
     setTableData(tableData.map(row => {
       if (row.id === id) {
 
         const updatedRow = { ...row, [field]: value };
+        updatedRow.product = updatedRow.product.value || updatedRow.product
         const checking = tableData.find((item) => item.id == id)
-        if (field == "product") {
-          if (checking.product != value) {
-            updatedRow.AdvanceTax = 0
-            updatedRow.TotalValueExclGst = ''
-            updatedRow.RPValueExclGst = ''
-            updatedRow.GstonRpvalue = 0
-            updatedRow.box = 0
-            updatedRow.unit = 0
-            updatedRow.carton = 0
-            updatedRow.RPValueInclGST = 0
-            updatedRow.netAmunt = 0
-            updatedRow.discount = 0
-            updatedRow.GSTperBox = 0
-            updatedRow.GrossAmntinclGst = 0
-            updatedRow.AdvanceTax = 0
-            updatedRow.diBspass = 0
-            updatedRow.RToffer = 0
-            updatedRow.WToffer = 0
-            updatedRow.RpDrive = 0
-            updatedRow.WHOLESALEDEAL = 0
-            updatedRow.TTS = 0
-            updatedRow.Gst = 0;
-            updatedRow.ValueAfterDis = 0
-          }
-        }
-        if (updatedRow.product == "") {
-          updatedRow.netAmunt = 0
-          updatedRow.AdvanceTax = 0
-          updatedRow.discount = 0
-          updatedRow.ValueExclGstperBox = ""
-          updatedRow.TotalValueExclGst = ''
-          updatedRow.RPValueExclGst = ''
-          updatedRow.GstonRpvalue = 0
-          updatedRow.box = ""
-          updatedRow.unit = ""
-          updatedRow.carton = ''
-          updatedRow.RPValueInclGST = 0
-          updatedRow.GSTperBox = 0
-          updatedRow.GrossAmntinclGst = 0
-          updatedRow.AdvanceTax = 0
-          updatedRow.diBspass = 0
-          updatedRow.RToffer = 0
-          updatedRow.WToffer = 0
-          updatedRow.RpDrive = 0
-          updatedRow.WHOLESALEDEAL = 0
-          updatedRow.TTS = 0;
-          updatedRow.Gst = 0;
-          updatedRow.ValueAfterDis = 0
-        }
 
-        const findProduct = Products.find((item) => item._id === updatedRow.product);
-        if (field == "product") {
-          updatedRow.unit == 0
-        }
-        if (field == "diBspass" || field == "RToffer" || field == "WToffer" || field == "RpDrive" || field == "WHOLESALEDEAL") {
-          updatedRow.discount = parseInt(updatedRow.diBspass) + parseInt(updatedRow.RToffer) + parseInt(updatedRow.WToffer) + parseInt(updatedRow.RpDrive) + parseInt(updatedRow.WHOLESALEDEAL)
-          updatedRow.ValueAfterDis = updatedRow.Gst + updatedRow.TotalValueExclGst - updatedRow.discount + updatedRow.AdvanceTax  //- updatedRow.discount + updatedRow.AdvanceTax
-          updatedRow.netAmunt = updatedRow.ValueAfterDis - updatedRow.TTS
-        }
-        if (field == "TTS") {
-          updatedRow.netAmunt = updatedRow.ValueAfterDis - updatedRow.TTS
-        }
-        if (field === "box" || field === "carton") {
-          console.log(findProduct)
-          if (findProduct) {
-            const BoxinCarton = parseInt(findProduct.BoxinCarton || 0);
-            const PcsinBox = parseInt(findProduct.PcsinBox || 0);
-            const Allunit = BoxinCarton * PcsinBox;
+        const findProductGst = Products.find((item) => item._id == updatedRow.product).SaleTaxPercent
 
-            // Default values if empty
-            const box = parseInt(updatedRow.box || 0);
-            const carton = parseInt(updatedRow.carton || 0);
-            if (box === 0) {
-              updatedRow.unit = Allunit * carton;
-            } else if (carton === 0) {
-              updatedRow.unit = PcsinBox * box;
-            } else {
-              const totalbox = box * findProduct.PcsinBox
-              updatedRow.unit = Allunit * carton + totalbox;
-            }
-            const boxPrice = (updatedRow.unit / findProduct.PcsinBox)
-            const totalBox = updatedRow.unit / findProduct.PcsinBox
-            console.log(totalBox)
-            updatedRow.ValueExclGstperBox = findProduct.TPSale
-            updatedRow.TotalValueExclGst = totalBox * findProduct.TPSale
-            updatedRow.RPValueExclGst = totalBox * findProduct.RetailPrice
-            findProduct.SaleTaxBy == "1" ? updatedRow.Gst = (updatedRow.TotalValueExclGst / 100) * parseInt(findProduct.SaleTaxPercent) : updatedRow.Gst = (updatedRow.RPValueExclGst / 100) * parseInt(findProduct.SaleTaxPercent)
 
-            updatedRow.RPValueInclGST = updatedRow.Gst + updatedRow.RPValueExclGst
-            updatedRow.RPValueInclGST.toFixed(2)
-            updatedRow.GSTperBox = updatedRow.Gst / totalBox
-            updatedRow.GSTperBox.toFixed(2)
-            updatedRow.totalBox = totalBox
-            updatedRow.GrossAmntinclGst = updatedRow.Gst + updatedRow.TotalValueExclGst
-            updatedRow.GrossAmntinclGst.toFixed(2)
-            updatedRow.ValueAfterDis = updatedRow.Gst + updatedRow.TotalValueExclGst - updatedRow.discount + updatedRow.AdvanceTax
-            updatedRow.netAmunt = updatedRow.ValueAfterDis - updatedRow.TTS
-            if (!updatedRow.discount) {
-              updatedRow.netAmunt = updatedRow.GrossAmntinclGst + updatedRow.AdvanceTax
-              updatedRow.netAmunt.toFixed(2)
-
-            } else {
-              updatedRow.netAmunt = updatedRow.GrossAmntinclGst + updatedRow.AdvanceTax - updatedRow.discount
-              updatedRow.netAmunt.toFixed(2)
-              updatedRow.discount.toFixed(2)
-
-            }
-            updatedRow.RPValuePerBox = updatedRow.RPValueInclGST / totalBox
-            const findClient = Client.find((item) => item._id == poClient)
-            if (findClient) {
-              if (findClient.AdvanceTaxApply == 1) {
-                if (findClient.Filler == 2) {
-                  updatedRow.AdvanceTax = updatedRow.GrossAmntinclGst / 100 * 0.25
-                } else {
-                  updatedRow.AdvanceTax = updatedRow.GrossAmntinclGst / 100 * 0.05
-                }
-              }
-            }
-            updatedRow.AdvanceTax.toFixed(2)
-            updatedRow.netAmunt.toFixed(2)
-          }
-
-        }
+        updatedRow.TotalAmount = updatedRow.Rate * updatedRow.carton
+        updatedRow.netAmunt = ((updatedRow.TotalAmount / 100 * Number(findProductGst)) + updatedRow.TotalAmount) - (updatedRow.Discount || 0)
         return updatedRow;
       }
       return row;
     }));
   };
-  const totalDiscount = tableData.reduce((sum, row) => sum + (parseFloat(row.discount) || 0), 0);
-  const TotalValueExclGst = tableData.reduce((sum, row) => sum + (parseFloat(row.TotalValueExclGst) || 0), 0);
-  const TotalGst = tableData.reduce((sum, row) => sum + (parseFloat(row.Gst) || 0), 0);
-  const totalBox = tableData.reduce((sum, row) => sum + (parseInt(row.box) || 0), 0);
-  const totalCarton = tableData.reduce((sum, row) => sum + (parseInt(row.carton) || 0), 0);
-  const totalUnit = tableData.reduce((sum, row) => sum + (parseInt(row.unit) || 0), 0);
-  const totalnetAmunt = tableData.reduce((sum, row) => sum + (parseFloat(row.netAmunt) || 0), 0);
-  const totalAdvanceTax = tableData.reduce((sum, row) => sum + (parseFloat(row.AdvanceTax) || 0), 0);
 
-  const AllProducts = Products.map((product) => ({
-    value: product._id,
-    label: `${product.mastercode} ${product.ProductName}`,
-  }))
+
+  const getDataDc = (value) => {
+    setSaleOrderDc([])
+    setPoClient(value)
+    const getClientDc = OrderDc.filter((item) => item.Customer === value.value)
+    const data = getClientDc.map((val) => ({
+      value: val.DcNumber,
+      label: val.DcNumber,
+    }))
+    console.log(getClientDc)
+    setDcClient(data)
+    setSelecetLoction(getClientDc[0].Location)
+    setSelecetStore(getClientDc[0].Store)
+
+
+  }
+  const setDrp = (value) => {
+    setSaleOrderDc(value)
+    const values = value.value;
+    const Order = OrderDc.find((val) => val.DcNumber === values)
+    console.log(Order.DcData)
+    setTableData(Order.DcData)
+    SetselectedOrderBooker(Order.DcData[0].OrderBooker)
+
+  }
+
   return (
     <div className="p-4  ">
       <ToastContainer />
@@ -251,7 +205,6 @@ const disableStore = {
             <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Sale Date</label>
             <input
               type="date"
-              defaultValue={findInvoice.SalesInvoiceDate}
               {...register("SaleInvoiceDate", { required: true })}
               className="w-full px-3 py-2 text-sm md:text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -259,10 +212,13 @@ const disableStore = {
 
           <div>
             <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Client</label>
-            <Select
-              onChange={(vals) => setPoClient(vals.value)}
-              options={AllClient.options}
-              defaultValue={defultClient}
+            <AsyncSelect
+              onChange={(vals) => getDataDc(vals)}
+              loadOptions={loadclients}
+              defaultOptions={startingClient}
+              value={poClient ? {
+                label: Client.find((item) => item._id == poClient).CutomerName
+              } : null}
               className="basic-single text-sm"
               classNamePrefix="select"
               isSearchable
@@ -283,28 +239,21 @@ const disableStore = {
             <input
               type="text"
               disabled
-              defaultValue={findInvoice.SalesInvoice}
-              {...register("salesInvoice")}
+              defaultValue={''}
+              value={findInvoice.SalesInvoice}
               className="w-full px-3 py-2 text-sm md:text-base border rounded-lg bg-gray-100"
             />
           </div>
 
+
           <div>
-            <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Sales Flow Ref</label>
-            <input
-              type="text"
-              defaultValue={findInvoice.SalesFlowRef}
-              {...register("SalesFlowRef")}
-              className="w-full px-3 py-2 text-sm md:text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Location</label>
-            <Select onChange={(v) => setDrp(v)} isDisabled={true}  value={disableLocation} />
+            <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Dc Number</label>
+            <Select value={SelectedDC ? {
+              label: SelectedDC
+            } : null} options={DcClient} isDisabled={tableData.length === 0 ? false : true} />
           </div>
           <div>
             <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Store</label>
-            <Select onChange={(v) => setDrp(v)} isDisabled={true}  value={disableStore} />
           </div>
         </div>
 
@@ -313,132 +262,46 @@ const disableStore = {
             <thead>
               <tr className="bg-gray-100">
                 <th className="border p-2 min-w-[200px]">Product</th>
-                <th className="border p-2 hidden md:table-cell">Unit</th>
                 <th className="border p-2">CTN</th>
-                <th className="border p-2">Box</th>
-                <th className="border p-2 hidden lg:table-cell">Value Excl Gst</th>
+                <th className="border p-2 hidden lg:table-cell">Rate</th>
+                <th className="border p-2 hidden xl:table-cell">Total Amount</th>
+                <th className="border p-2 hidden xl:table-cell">Discount</th>
                 <th className="border p-2 hidden lg:table-cell">GST</th>
-                <th className="border p-2 hidden xl:table-cell">DIS PASS</th>
-                <th className="border p-2 hidden xl:table-cell">RET T</th>
-                <th className="border p-2 hidden xl:table-cell">WHOL T</th>
-                <th className="border p-2 hidden 2xl:table-cell">RET POW</th>
-                <th className="border p-2 hidden 2xl:table-cell">WHOLE DEAL</th>
-                <th className="border p-2 hidden lg:table-cell">Adv Tax</th>
-                <th className="border p-2">Discount</th>
-                <th className="border p-2 hidden xl:table-cell">After Disc</th>
-                <th className="border p-2 hidden xl:table-cell">TTS Disc</th>
                 <th className="border p-2">Net Amount</th>
-                <th className="border p-2">Action</th>
               </tr>
             </thead>
             <tbody>
               {tableData.map((row) => (
                 <tr key={row.id} className="hover:bg-gray-50">
                   <td className="border p-2">
-                    <Select
-                      menuPortalTarget={document.body}
-                      styles={{
-                        menuPortal: base => ({ ...base, zIndex: 9999 }),
-                        control: (provided) => ({
-                          ...provided,
-                          minHeight: '35px',
-                          fontSize: '14px'
-                        })
-                      }}
-                      value={row.product ? {
-                        value: row.product,
-                        label: `${Products.find((p) => p._id === row.product)?.mastercode} ${Products.find((p) => p._id === row.product)?.ProductName}`
-                      } : null}
-                      onChange={(selectedOption) =>
-                        handleCellChange(row.id, 'product', selectedOption?.value || '')
-                      }
-                      options={AllProduct.options}
-                      className="text-sm"
-                      classNamePrefix="select"
-                      placeholder="Select Product..."
-                      isSearchable
-                      isClearable
-                    />
-                  </td>
-                  <td className="border p-2 hidden md:table-cell">{row.unit || 0}</td>
-                  <td className="border p-2">
-                    <input
-                      type="number"
-                      value={row.carton}
-                      onChange={(e) => handleCellChange(row.id, 'carton', e.target.value)}
-                      className="w-full p-1 text-xs md:text-sm border rounded"
-                    />
+                    {Products.find((item) => item._id == row.product).ProductName}
                   </td>
                   <td className="border p-2">
+                    {row.carton}
+                  </td>
+
+                  <td className="border p-2 hidden lg:table-cell">
                     <input
                       type="number"
-                      value={row.box}
-                      onChange={(e) => handleCellChange(row.id, 'box', e.target.value)}
+                      value={row?.Rate}
+                      onChange={(e) => handleCellChange(row.id, 'Rate', e.target.value)}
                       className="w-full p-1 text-xs md:text-sm border rounded"
                     />
                   </td>
-                  <td className="border p-2 hidden lg:table-cell">{row.TotalValueExclGst || 0.00}</td>
-                  <td className="border p-2 hidden lg:table-cell">{row.Gst?.toFixed(2) || 0.00}</td>
-                  <td className="border p-2 hidden xl:table-cell">
-                    <input
-                      type="number"
-                      value={row?.diBspass || 0}
-                      onChange={(e) => handleCellChange(row.id, 'diBspass', e.target.value)}
-                      className="w-full p-1 text-xs md:text-sm border rounded"
-                    />
+                  <td className="border p-2 ">
+                    {row.TotalAmount || 0}
                   </td>
                   <td className="border p-2 hidden xl:table-cell">
                     <input
                       type="number"
-                      value={row?.RToffer || 0}
-                      onChange={(e) => handleCellChange(row.id, 'RToffer', e.target.value)}
+                      value={row?.Discount || 0}
+                      onChange={(e) => handleCellChange(row.id, 'Discount', e.target.value)}
                       className="w-full p-1 text-xs md:text-sm border rounded"
                     />
                   </td>
+                  <td className="border p-2 hidden lg:table-cell">{row.Gst || 0.00}</td>
                   <td className="border p-2 hidden xl:table-cell">
-                    <input
-                      type="number"
-                      value={row?.WToffer || 0}
-                      onChange={(e) => handleCellChange(row.id, 'WToffer', e.target.value)}
-                      className="w-full p-1 text-xs md:text-sm border rounded"
-                    />
-                  </td>
-                  <td className="border p-2 hidden 2xl:table-cell">
-                    <input
-                      type="number"
-                      value={row?.RpDrive || 0}
-                      onChange={(e) => handleCellChange(row.id, 'RpDrive', e.target.value)}
-                      className="w-full p-1 text-xs md:text-sm border rounded"
-                    />
-                  </td>
-                  <td className="border p-2 hidden 2xl:table-cell">
-                    <input
-                      type="number"
-                      value={row?.WHOLESALEDEAL || 0}
-                      onChange={(e) => handleCellChange(row.id, 'WHOLESALEDEAL', e.target.value)}
-                      className="w-full p-1 text-xs md:text-sm border rounded"
-                    />
-                  </td>
-                  <td className="border p-2 hidden lg:table-cell">{row?.AdvanceTax?.toFixed(2) || 0.00}</td>
-                  <td className="border p-2">{row?.discount || 0}</td>
-                  <td className="border p-2 hidden xl:table-cell">{row?.ValueAfterDis?.toFixed(2) || 0.00}</td>
-                  <td className="border p-2 hidden xl:table-cell">
-                    <input
-                      type="number"
-                      value={row?.TTS || 0}
-                      onChange={(e) => handleCellChange(row.id, 'TTS', e.target.value)}
-                      className="w-full p-1 text-xs md:text-sm border rounded"
-                    />
-                  </td>
-                  <td className="border p-2">{row?.netAmunt?.toFixed(2) || 0.00}</td>
-                  <td className="border p-2">
-                    <button
-                      type="button"
-                      onClick={() => removeRow(row.id)}
-                      className="bg-red-500 text-white px-2 py-1 text-xs md:text-sm rounded hover:bg-red-600"
-                    >
-                      Remove
-                    </button>
+                    {row.netAmunt}
                   </td>
                 </tr>
               ))}
@@ -447,22 +310,13 @@ const disableStore = {
               <tfoot>
                 <tr className="bg-gray-100 font-semibold">
                   <td className="border p-2">Total</td>
-                  <td className="border p-2 hidden md:table-cell">{totalUnit}</td>
-                  <td className="border p-2">{totalCarton}</td>
-                  <td className="border p-2">{totalBox}</td>
-                  <td className="border p-2 hidden lg:table-cell">{TotalValueExclGst?.toFixed(2)}</td>
-                  <td className="border p-2 hidden lg:table-cell">{TotalGst?.toFixed(2)}</td>
-                  <td className="border p-2 hidden xl:table-cell"></td>
-                  <td className="border p-2 hidden xl:table-cell"></td>
-                  <td className="border p-2 hidden xl:table-cell"></td>
-                  <td className="border p-2 hidden 2xl:table-cell"></td>
-                  <td className="border p-2 hidden 2xl:table-cell"></td>
-                  <td className="border p-2 hidden lg:table-cell">{totalAdvanceTax?.toFixed(2)}</td>
-                  <td className="border p-2">{totalDiscount?.toFixed(2)}</td>
-                  <td className="border p-2 hidden xl:table-cell"></td>
-                  <td className="border p-2 hidden xl:table-cell"></td>
-                  <td className="border p-2">{totalnetAmunt?.toFixed(2)}</td>
                   <td className="border p-2"></td>
+                  <td className="border p-2"></td>
+                  <td className="border p-2"></td>
+                  <td className="border p-2"></td>
+                  <td className="border p-2"></td>
+                  <td className="border p-2"></td>
+
                 </tr>
               </tfoot>
             )}
@@ -470,19 +324,111 @@ const disableStore = {
         </div>
 
         <div className="flex flex-col md:flex-row gap-4 justify-between">
-          <button
-            type="button"
-            onClick={addNewRow}
-            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm md:text-base"
-          >
-            Add Row
-          </button>
+
           <button
             type="submit"
             className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm md:text-base"
           >
-            Update Sale Invoice
+            Create Sale Invoice
           </button>
+        </div>
+        <div className='flex justify-end gap-2'>
+          <div className="bg-gradient-to-br from-rose-50 to-white min-w-[24vw] p-3 rounded-lg border border-rose-100 shadow space-y-3">
+
+            {/* Net Amount */}
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-rose-600">Net Amount:</label>
+              <span className="text-sm font-bold text-rose-600">{totalAmount}</span>
+            </div>
+
+            {/* Less Account Section */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">Less Account</span>
+
+              <AsyncSelect
+                menuPortalTarget={document.body}
+                onChange={(selectedOption) => setlessAccount(selectedOption?.value)}
+                loadOptions={loadAccounts}
+                value={lessAccount ? {
+                  label: `${Accounts.find((item) => item._id == lessAccount).AccountName} ${Accounts.find((item) => item._id == lessAccount).AccountCode}`
+                } : null}
+                styles={{
+                  menuPortal: base => ({ ...base, zIndex: 9999 }),
+                  control: (provided) => ({
+                    ...provided,
+                    backgroundColor: '#fff1f2',
+                    borderColor: '#fecdd3',
+                    minHeight: '32px',
+                    boxShadow: 'none',
+                    '&:hover': { borderColor: '#fda4af' }
+                  })
+                }}
+                defaultOptions={startingAccount}
+                isClearable={true}
+                className="text-xs min-w-[14vw] max-w-[14vw]"
+                classNamePrefix="select"
+                isSearchable
+                placeholder="Select..."
+              />
+
+              <span className="text-sm font-medium text-gray-700">Amt</span>
+              <input
+                type="number"
+                {...register("LessAmount")}
+                onChange={(e) => setLessAmount(e.target.value)}
+                placeholder="0"
+                className="w-[6vw] px-2 py-1 text-xs text-right bg-rose-50 border border-rose-200 rounded focus:ring-1 focus:ring-rose-300 focus:border-rose-400 focus:outline-none transition"
+              />
+            </div>
+
+            {/* Add Account Section */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">Add Account</span>
+
+              <AsyncSelect
+                menuPortalTarget={document.body}
+                onChange={(selectedOption) => setAddAccount(selectedOption?.value)}
+                loadOptions={loadAccounts}
+                value={AddAccount ? {
+                  label: `${Accounts.find((item) => item._id == AddAccount).AccountName} ${Accounts.find((item) => item._id == AddAccount).AccountCode}`
+                } : null}
+                styles={{
+                  menuPortal: base => ({ ...base, zIndex: 9999 }),
+                  control: (provided) => ({
+                    ...provided,
+                    backgroundColor: '#fff1f2',
+                    borderColor: '#fecdd3',
+                    minHeight: '32px',
+                    boxShadow: 'none',
+                    '&:hover': { borderColor: '#fda4af' }
+                  })
+                }}
+                defaultOptions={startingAccount}
+                isClearable={true}
+                className="text-xs min-w-[14vw]"
+                classNamePrefix="select"
+                isSearchable
+                placeholder="Select..."
+              />
+
+              <span className="text-sm font-medium text-gray-700">Amt</span>
+              <input
+                type="number"
+                {...register("AddAmount")}
+                onChange={(e) => setAddAmount(e.target.value)}
+                placeholder="0"
+                className="w-[6vw] px-2 py-1 text-xs text-right bg-rose-50 border border-rose-200 rounded focus:ring-1 focus:ring-rose-300 focus:border-rose-400 focus:outline-none transition"
+              />
+            </div>
+
+            {/* Total Net Amount */}
+            <div className="pt-2 border-t border-rose-100">
+              <div className="flex items-center justify-between mt-1">
+                <span className="text-sm font-semibold text-gray-800">Total Net:</span>
+                <span className="text-sm font-bold text-rose-600">{totalNetAmount}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </form>
     </div>

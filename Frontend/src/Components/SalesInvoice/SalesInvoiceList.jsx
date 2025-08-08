@@ -21,6 +21,7 @@ import { fetchOrderBooker } from '../../Redux/Reducers/OrderBookerReducer';
 import { fetchStore } from '../../Redux/Reducers/StoreReducer';
 import { fetchLocation } from '../../Redux/Reducers/LocationReducer';
 import { fetchTotalProducts } from '../../Redux/Reducers/TotalProductsReducer';
+import { fetchOrderDc } from '../../Redux/Reducers/OrderDCReducer';
 
 const SalesInvoiceList = () => {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -35,6 +36,7 @@ const SalesInvoiceList = () => {
   const UserRihts = useSelector((state) => state.UsersRights.UserRights)
   const category = useSelector((state) => state.Category.category)
   const Client = useSelector((state) => state.Client.client)
+  
 
   const getData = async () => {
     console.log("first");
@@ -47,7 +49,7 @@ const SalesInvoiceList = () => {
       const store = await getDataFundtion("/store");
       const Location = await getDataFundtion('/Location')
       const AllProducts = await getDataFundtion("/TotalProduct")
-
+      const onTrueDc = await getDataFundtion("DcOrder/OnlyTrue")
       const list = response.data;
       dispatch(fetchLocation(Location.data))
       dispatch(fetchStore(store.data));
@@ -55,6 +57,7 @@ const SalesInvoiceList = () => {
       dispatch(fetchClient(customer.data));
       dispatch(fetchOrderBooker(orderBooker.data));
       dispatch(fetchSalesInvoice(list));
+      dispatch(fetchOrderDc(onTrueDc.data))
       dispatch(fetchTotalProducts(AllProducts.data))
       setRows(list);
     } catch (err) {
@@ -64,16 +67,16 @@ const SalesInvoiceList = () => {
     getAllSaleInvoice()
   };
 
-const getAllSaleInvoice = async () =>{
-  const res = await getDataFundtion("/saleInvoice")
-  console.log("first")
-  const list = res.data
-  console.log(res)
-  const sortedInvoice = [...list].sort((a, b) => a.SalesInvoice - b.SalesInvoice)
-  dispatch(fetchSalesInvoice(sortedInvoice));
-  setRows(list);
-      
-    }
+  const getAllSaleInvoice = async () => {
+    const res = await getDataFundtion("/saleInvoice")
+    console.log("first")
+    const list = res.data
+    console.log(res)
+    const sortedInvoice = [...list].sort((a, b) => a.SalesInvoice - b.SalesInvoice)
+    dispatch(fetchSalesInvoice(sortedInvoice));
+    setRows(list);
+
+  }
 
   const checkAcess = async () => {
     const allowAcess = await UserRihts.find((item) => item == DeleteRight)
@@ -219,7 +222,7 @@ const getAllSaleInvoice = async () =>{
   }
   return (
 
-    <div style={{ margin: 20, height: "70%", width: '80vw'}}>
+    <div style={{ margin: 20, height: "70%", width: '80vw' }}>
       <ToastContainer />
       <DataGrid
         rows={rows}

@@ -21,7 +21,7 @@ const OrderDCPostModal = () => {
 
 
 
-    const OrderDcOptions = OrderDc.filter((item) => item.PostStatus !== true).map((item) => {
+    const OrderDcOptions = OrderDc.filter((item) => item.Status == "false").map((item) => {
         return ({
             value: item.DcNumber,
             label: item.DcNumber
@@ -36,7 +36,7 @@ const OrderDCPostModal = () => {
         console.log(selectedOrderDcFrom.value, selectedOrderDcTo.value);
 
         const filtervalues = OrderDc.filter(obj => obj.DcNumber >= selectedOrderDcFrom.value && obj.DcNumber <= selectedOrderDcTo.value)
-        const allFalse = filtervalues.filter((item) => item.Status == "false").map((item) => {
+        const allFalse = filtervalues.filter((item) => item.Status === "false").map((item) => {
             return ({
                 id: item._id,
                 inv: item.DcNumber,
@@ -70,7 +70,6 @@ const OrderDCPostModal = () => {
         }));
 
 
-console.log(total)
 
         for (const item of total) {
             try {

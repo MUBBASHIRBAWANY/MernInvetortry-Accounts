@@ -221,7 +221,7 @@ const SaleOrderAdd = () => {
     return (
         <div className="p-4  ">
             <ToastContainer />
-            <h1 className="text-xl md:text-3xl font-bold text-center text-gray-800 mb-6">Create Sales Invoice</h1>
+            <h1 className="text-xl md:text-3xl font-bold text-center text-gray-800 mb-6">Create Sales Order</h1>
 
             <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-4 md:p-6 rounded-lg shadow-md">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
