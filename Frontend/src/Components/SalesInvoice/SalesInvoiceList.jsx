@@ -22,6 +22,7 @@ import { fetchStore } from '../../Redux/Reducers/StoreReducer';
 import { fetchLocation } from '../../Redux/Reducers/LocationReducer';
 import { fetchTotalProducts } from '../../Redux/Reducers/TotalProductsReducer';
 import { fetchOrderDc } from '../../Redux/Reducers/OrderDCReducer';
+import { fetchAdminReducer } from '../../Redux/Reducers/AdminReducer';
 
 const SalesInvoiceList = () => {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -36,12 +37,13 @@ const SalesInvoiceList = () => {
   const UserRihts = useSelector((state) => state.UsersRights.UserRights)
   const category = useSelector((state) => state.Category.category)
   const Client = useSelector((state) => state.Client.client)
-  
+
 
   const getData = async () => {
     console.log("first");
     setLoading(true);
     try {
+      const AdminiD = "68903ec2664155e11db10367"
       const response = await getDataFundtion(`/SaleInvoice/getLimitedSaleInvoice`);
       const customer = await getDataFundtion("/customer");
       const product = await getDataFundtion("/product");
@@ -50,6 +52,7 @@ const SalesInvoiceList = () => {
       const Location = await getDataFundtion('/Location')
       const AllProducts = await getDataFundtion("/TotalProduct")
       const onTrueDc = await getDataFundtion("DcOrder/OnlyTrue")
+      const res = await getDataFundtion(`/Administrative/get/${AdminiD}`)
       const list = response.data;
       dispatch(fetchLocation(Location.data))
       dispatch(fetchStore(store.data));
@@ -59,6 +62,7 @@ const SalesInvoiceList = () => {
       dispatch(fetchSalesInvoice(list));
       dispatch(fetchOrderDc(onTrueDc.data))
       dispatch(fetchTotalProducts(AllProducts.data))
+      dispatch(fetchAdminReducer(res.data))
       setRows(list);
     } catch (err) {
       console.log(err);

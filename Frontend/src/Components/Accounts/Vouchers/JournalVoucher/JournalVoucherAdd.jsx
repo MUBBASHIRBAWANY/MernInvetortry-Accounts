@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useSelector } from 'react-redux';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import AsyncSelect from 'react-select/async';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -10,51 +10,38 @@ import { rangeBetween } from '../../../Global/GenrateCode';
 import Select from 'react-select'
 
 
-const BankPaymentVoucherEdit = () => {
+const JournalVoucherAdd = () => {
     const navigate = useNavigate();
+    const Account = useSelector((state) => state.ChartofAccounts.ChartofAccounts)
+    const CashAccountNumber = useSelector((state) => state.AdminReducer.AdminReducer)
+    const filteredAccount = Account.filter((item) => item.AccountCode.length > 5)
     const Client = useSelector((state) => state.Client.client)
-    const [voucherType, setVoucherType] = useState("")
-    const [debitAccount, setDebitAccount] = useState("");
-    const [creditAccount, setCreditAccount] = useState("");
+    const [voucherType, setVoucherType] = useState("JV")
+    const [tableData, setTableData] = useState([]);
     const [invDrp, setInvDrp] = useState([])
     const [ClientInv, setClientInv] = useState([])
     const SoftStore = useSelector((state) => state.Store.Store)
-    const { id } = useParams();
-    const Account = useSelector((state) => state.ChartofAccounts.ChartofAccounts)
-    const Vendor = useSelector((state) => state.Vendor.state)
-    const EditVoucher = useSelector((state) => state.VoucherReducer.Voucher)
-    const ChqBook = useSelector((state) => state.ChqBook.ChqBook)
-    const [unUsedChq, setUnuseChq] = useState([])
-    const [chq, setChq] = useState('')
-    const BankAccountNumber = useSelector((state) => state.AdminReducer.AdminReducer)
-    const filteredAccount = Account.filter((item) => item.AccountCode.length > 5)
     const store = [{
         _id: "0",
         StoreName: "Head Office",
         StoreCode: "HO"
-    }].concat(useSelector((state) => state.Store.Store))
+    }].concat(SoftStore)
 
     const result = [];
-    for (let i = BankAccountNumber.BankAccountFrom; i <= BankAccountNumber.BankAccountTo; i++) {
+    for (let i = CashAccountNumber.CashAccountFrom; i <= CashAccountNumber.CashAccountTo; i++) {
         result.push(i.toString().padStart(5, '0')); // Adjust to 5 digits
     }
-    const AllVendorDrp = Account.filter((Acc) => Acc._id == BankAccountNumber.WithholdingTax).concat(Vendor)
-    const AllVendor = AllVendorDrp.map((item) => ({
-        label: `${item.VendorName || item.AccountName} `,
-        value: item._id
-    }));
+
+
 
     const ALLStore = store.map((item) => ({
         label: `${item.StoreName}`,
         value: item._id
     }));
-    console.log(ALLStore)
-    const Bank = filteredAccount.filter((item) => result.some(prefix => item.AccountCode.startsWith(prefix)))
-    const [MainAccount, setMainAccount] = useState("");
-    const [tableData, setTableData] = useState([]);
-    const [unUsedCHqData, setUsedCHqData] = useState([])
-    const [PaidFor, setPaidFor] = useState("vendor");
-    console.log(PaidFor)
+
+    const Cash = filteredAccount.filter((item) => result.some(prefix => item.AccountCode.startsWith(prefix)))
+
+
     const loadAccounts = async (inputValue) => {
         if (!inputValue) return [];
 
@@ -66,19 +53,22 @@ const BankPaymentVoucherEdit = () => {
 
         return filtered.map((item) => ({
             label: `${item.AccountCode} ${item.AccountName}`,
-            value: item._id
+            value: item._id,
+            code: item.AccountCode
         }));
     }
-    const BankAccount = Bank.map((item) => ({
+    const CashAccount = Cash.map((item) => ({
         label: `${item.AccountCode} ${item.AccountName}`,
         value: item._id
     }));;
     const startingAccount = filteredAccount.slice(0, 50).map((item) => ({
         label: `${item.AccountCode} ${item.AccountName}`,
-        value: item._id
+        value: item._id,
+        code: item.AccountCode
     }));;
     const [show, setShow] = useState(false)
-    const { reset, register, handleSubmit, formState: { errors } } = useForm();
+    const { register, handleSubmit, reset, formState: { errors } } = useForm();
+
 
     const addNewRow = () => {
         setTableData([...tableData, {
@@ -95,95 +85,94 @@ const BankPaymentVoucherEdit = () => {
         setTableData(tableData.filter(row => row.id !== id));
     };
 
+    const handleCellChange = async (id, field, value) => {
+        let newTableData = [...tableData];
 
-    const handleCellChange = (id, field, value) => {
-        console.log(field)
-        setTableData(tableData.map(row => {
-            if (row.id === id) {
+        const rowIndex = newTableData.findIndex(row => row.id === id);
+        if (rowIndex === -1) return;
 
-                const updatedRow = { ...row, [field]: value };
-                const checking = tableData.find((item) => item.id == id)
-                if (field == "vendor") {
-                    const checkWth = Account.find((item) => item._id == value.value)
-                    if (checkWth) {
-                        updatedRow.Account = checkWth._id
-                        updatedRow.vendor = ""
-                        updatedRow.show = true
-                    }
-                    else {
-                        updatedRow.Account = BankAccountNumber.Vendor
-                        updatedRow.vendor = value.value
-                        updatedRow.show = false
-
-                    }
-                    const someStore = Vendor.find((item) => item._id == value.value)?.Store;
-                    if (someStore) {
-                        const storeForVendor = SoftStore.filter((item) => someStore.includes(item._id))
-                            .map((s) => ({
-                                label: `${s.StoreName}`,
-                                value: s._id
-                            }))
-                        setVendorStore(storeForVendor)
-                    }
-                    else {
-                        const AllStore = SoftStore.map((item) => ({
-                            label: `${item.StoreName}`,
-                            value: item._id
-                        }))
-                        setVendorStore(AllStore)
-                    }
+        let updatedRow = { ...newTableData[rowIndex], [field]: value };
+        const checking = tableData.find((item) => item.id == id);
 
 
-                    if (checking.Account != value) {
-                        updatedRow.Debit = 0
-                        updatedRow.Credit = 0
-                    }
-                }
 
-                if (updatedRow.Account == "") {
-                    updatedRow.Debit = 0
-                    updatedRow.Credit = 0
-                }
-                if (field == "store") {
-                    updatedRow.store = value.value
-                }
+        // Reset debit/credit if no account
+        if (updatedRow.Account === "") {
+            updatedRow.Debit = 0;
+            updatedRow.Credit = 0;
+            setInvDrp([])
+            updatedRow.ClientRef2 = ""
+        }
 
-                if (field == "Account") {
-                    console.log("first")
-                    if (value.value === MainAccount) {
-                        toast.error("You cannot select the main account as a transaction account");
-                        updatedRow.Account = ""
-                    }
-                    else {
-                        updatedRow.Account = value.value
-                        updatedRow.Debit = 0
-                        updatedRow.Credit = 0
-                    }
+        // Handle store field
+        if (field === "store") {
+            updatedRow.store = value.value;
+        }
+
+        // Handle Account field
+        if (field === "Account") {
+            updatedRow.Account = value.value
+            setInvDrp([])
+            const clientAccount = Client.find((item) => item.AccountCode === value.code)?._id
+            if (clientAccount) {
+                try {
+                    const ClientInvoice = await getDataFundtion(`SaleInvoice/invoiceClient/${clientAccount}`)
+
+                    setClientInv(ClientInvoice.data)
+                    const DrpCutInv = ClientInvoice.data.map((item) => ({
+                        label: item.SalesInvoice,
+                        value: item.SalesInvoice,
+                    }))
+                    console.log(DrpCutInv)
+                    setInvDrp(DrpCutInv)
+                    updatedRow.ClientLine = "true"
+                } catch (err) {
 
                 }
-                if (field == "Debit") {
-                    updatedRow.Debit = value
-                    updatedRow.Credit = 0
-                }
-                if (field == "Credit") {
-                    updatedRow.Credit = value
-                    updatedRow.Debit = 0
-                }
-                if (field == "Ref") {
-                    updatedRow.Ref = value
-                }
 
-
-                return updatedRow;
             }
-            return row;
-        }));
+            if (value.value === debitAccount || value.value === creditAccount) {
+                toast.error("You cannot select the main account as a transaction account");
+                updatedRow.Account = "";
+            } else {
+                updatedRow.Account = value.value;
+                updatedRow.Debit = 0;
+                updatedRow.Credit = 0;
+            }
+        }
+
+        // Handle Debit field
+        if (field === "Debit") {
+            updatedRow.Debit = value;
+            updatedRow.Credit = 0;
+        }
+
+        // Handle Credit field
+        if (field === "Credit") {
+            updatedRow.Credit = value;
+            updatedRow.Debit = 0;
+        }
+
+        // Handle Ref field (async part)
+        if (field === "ClientRef2") {
+            console.log(value)
+            updatedRow.ClientRef2 = value.value;
+            const RemainInvAmt = ClientInv.find((val) => val.SalesInvoice === value.value)?.RemainingAmount
+            updatedRow.Credit = RemainInvAmt
+        }
+
+        // Update row in the new table data
+        newTableData[rowIndex] = updatedRow;
+
+        // Finally, update state
+        setTableData(newTableData);
     };
+
+
 
 
     let TotalDebit = tableData.reduce((sum, row) => sum + (parseFloat(row.Debit) || 0), 0);
     let TotalCredit = tableData.reduce((sum, row) => sum + (parseFloat(row.Credit) || 0), 0);
-
     const onSubmit = async (data) => {
         const value2 = TotalDebit - TotalCredit
         console.log(value2)
@@ -194,121 +183,62 @@ const BankPaymentVoucherEdit = () => {
         if (findAccount) {
             return toast.error("Main Account not Allow to select in table")
         }
-        tableData.push({
-            id: Date.now(),
-            Account: voucherType === "BR" ? debitAccount : creditAccount,
-            Credit: voucherType === "BP" ? Math.abs(TotalDebit - TotalCredit) : 0,
-            Debit: voucherType === "BR" ? Math.abs(TotalDebit - TotalCredit) : 0,
-            Narration: tableData[0].Narration,
-            show: true
-
-        })
-        voucherType === "BR" ? data.DebitAccount = debitAccount : data.CreditAccount = creditAccount
+        
         data.VoucharData = tableData,
-            TotalDebit = tableData.reduce((sum, row) => sum + (parseFloat(row.Debit) || 0), 0);
+        data.status = "Post"
+        const code = await getDataFundtion(`/Voucher/GetLastVouher/${voucherType}`)
+        console.log(code)
+        if (code.length == 0) {
+            data.VoucherNumber = `${voucherType}0000001`
+        } else {
+            let nextVoucherNumber = (parseInt(code[0].VoucherNumber.slice('2', "9"))) + 1
+            data.VoucherNumber = `CP${nextVoucherNumber.toString().padStart(7, '0')}`;
+        }
+        TotalDebit = tableData.reduce((sum, row) => sum + (parseFloat(row.Debit) || 0), 0);
         TotalCredit = tableData.reduce((sum, row) => sum + (parseFloat(row.Credit) || 0), 0);
         data.VoucherType = voucherType
         data.TotalDebit = TotalDebit
         data.TotalCredit = TotalCredit
         const value = TotalDebit - TotalCredit
-
         console.log(value)
         if (value !== 0) {
             return toast.error("Credit Account Not Be Zero")
         }
-        data.Status = "false"
+        const invoiceData = tableData.filter((item)=> item.ClientLine == "true" )
+        .map((inv)=>({
+            amount : inv.Credit,
+            inv :  inv.ClientRef2
+        }))
+        data.invoiceData = invoiceData
         try {
+            
+            console.log(data)
+            const res = await createDataFunction("/Voucher", data)
 
-            const res = await updateDataFunction(`/Voucher/update/${id}`, data)
-            if (chq.label !== unUsedCHqData.label) {
-                console.log("equal")
-                await updateDataFunction(`/ChqBook/ChangeStatus/${data.ChequeBook}`, UsedChq)
-                await updateDataFunction(`/ChqBook/ChangeStatus/${unUsedCHqData.value}`, unUsedChq)
-            }
-            toast.success("Bank Payment Voucher Updated Successfully")
             console.log(res)
             setTimeout(() => {
-                navigate("/BankPaymentVoucherList");
+                navigate("/CashVoucher");
             }, 1000);
         } catch (err) {
-            console.log(err)
-            toast.error("some thing went wrong")
-        }
-    }
+            if (err.status === 401) {
+                console.log(err.response.data.message)
+                toast.error(err.response.data.message)
 
-    const SetDrp = (val, ps) => {
-        setMainAccount(val)
-        setUnuseChq([])
-        ps === undefined ? setChq('') : null
-        const AllChq = ChqBook.filter((item) => item.Bank == val)
-            .map((item1) => ({
-                id: item1._id,
-                chqs: item1.Cheuques[0]
-            })).flat()
-        const arr = []
-        const combined = AllChq.flatMap((item, index) => {
-            const id = item._id || item.id;
-            Object.entries(item)
-            arr.push({
-                ref: item.id,
-                chq: item.chqs
-
-            })
-
-        });
-        let result = [];
-        arr.forEach(obj => {
-            obj.chq.forEach(innerObj => {
-                result.push({
-                    ref: obj.ref,
-                    chq: innerObj.chq,
-                    status: innerObj.status
-                });
-            });
-        });
-        const unUsedchq = result.filter((item) => item.status == "unUsed")
-            .map((ch) => ({
-                value: ch.ref,
-                label: ch.chq
-            }))
-        const online = [{
-            value: "Online",
-            label: "Online"
-        }].concat(unUsedchq)
-        setUnuseChq(online)
-    }
-
-    const getData = () => {
-        const voucherData = EditVoucher.find((item) => item._id == id);
-
-        if (voucherData) {
-            setMainAccount(voucherData.VoucherMainAccount);
-            setTableData(voucherData.VoucharData)
-            setVoucherType(voucherData.VoucherType);
-            setDebitAccount(voucherData.DebitAccount)
-            setCreditAccount(voucherData.CreditAccount)
-            setChq({
-                label: voucherData.ChequeNumber,
-                value: voucherData.ChequeBook
-            })
-            setUsedCHqData({
-                label: voucherData.ChequeNumber,
-                value: voucherData.ChequeBook
-            })
-            SetDrp(voucherData.VoucherMainAccount, 1)
-            reset({
-                VoucherDate: voucherData.VoucherDate.split("T")[0],
-                Voucher: voucherData.VoucherNumber,
-                Cheque: voucherData.Cheque,
-                Remarks: voucherData.Remarks,
-            });
-
+            } else {
+                console.log(err)
+                toast.error("some thing went wrong")
+            }
         }
     }
 
     useEffect(() => {
-        getData();
-    }, [id, EditVoucher]);
+        const today = new Date();
+        const formatted = today.toISOString().split("T")[0]; // YYYY-MM-DD
+        reset({
+            VoucherDate: formatted
+        })
+    }, []);
+
     const customStyles = {
         control: (provided) => ({
             ...provided,
@@ -322,23 +252,29 @@ const BankPaymentVoucherEdit = () => {
         }),
         option: (provided, state) => ({
             ...provided,
-            backgroundColor: state.isSelected,
+            backgroundColor: state.isSelected
+                ? 'transparent' // No background on selected option
+                : state.isFocused
+                    ? 'rgba(0, 0, 0, 0.05)' // Slight highlight on hover
+                    : 'transparent',
             color: '#000',
         }),
     };
+
+
     const VoucherType = [{
-        value: "BP",
-        label: "BP Bank Payment Voucher",
+        value: "CP",
+        label: "CP Cash Payment Voucher",
     },
     {
-        value: "BR",
-        label: "BR Bank Recipt Voucher",
+        value: "CR",
+        label: "CR Cash Recipt Voucher",
     }
     ]
     return (
         <div className="p-4  ">
             <ToastContainer />
-            <h1 className="text-xl md:text-3xl font-bold text-center text-gray-800 mb-6">{VoucherType.find((val) => val.value === voucherType)?.label}</h1>
+            <h1 className="text-xl md:text-3xl font-bold text-center text-gray-800 mb-6">Cash Book</h1>
 
             <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-4 md:p-6 rounded-lg shadow-md">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
@@ -359,7 +295,7 @@ const BankPaymentVoucherEdit = () => {
                             styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
                             options={VoucherType}
                             value={voucherType ? VoucherType.find((val) => val.value === voucherType) : null}
-                            isDisabled={true}
+                            isDisabled={tableData.length === 0 ? false : true}
                             className="basic-single text-sm"
                             classNamePrefix="select"
                             isSearchable
@@ -367,17 +303,17 @@ const BankPaymentVoucherEdit = () => {
                         />
                     </div>
                     {
-                        voucherType == "BP" ?
+                        voucherType == "CP" ?
                             <div>
                                 <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Credit Account </label>
                                 <Select
                                     menuPortalTarget={document.body}
                                     onChange={(selectedOption) => setCreditAccount(selectedOption.value)}
                                     styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
-                                    options={BankAccount}
+                                    options={CashAccount}
                                     value={creditAccount ? {
                                         value: `${creditAccount}`,
-                                        label: `${Account.find((c) => c._id == creditAccount)?.AccountCode} ${Account.find((c) => c._id === creditAccount)?.AccountName}`
+                                        label: `${Account.find((c) => c._id === creditAccount)?.AccountCode} ${Account.find((c) => c._id === creditAccount)?.AccountName}`
                                     } : null}
                                     className="basic-single text-sm"
                                     classNamePrefix="select"
@@ -385,13 +321,13 @@ const BankPaymentVoucherEdit = () => {
                                     placeholder="Select credit account..."
                                 />
                             </div>
-                            : voucherType == "BR" ? <div>
+                            : voucherType == "CR" ? <div>
                                 <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Debit Account </label>
                                 <Select
                                     menuPortalTarget={document.body}
                                     onChange={(selectedOption) => setDebitAccount(selectedOption.value)}
                                     styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
-                                    options={BankAccount}
+                                    options={CashAccount}
                                     value={debitAccount ? {
                                         value: `${debitAccount}`,
                                         label: `${Account.find((c) => c._id === debitAccount)?.AccountCode} ${Account.find((c) => c._id === debitAccount)?.AccountName}`
@@ -417,7 +353,7 @@ const BankPaymentVoucherEdit = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Chq </label>
+                                <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Ref </label>
                                 <input
                                     type="text"
                                     style={{ height: "38px" }}
@@ -570,7 +506,6 @@ const BankPaymentVoucherEdit = () => {
                     </table>
                 </div>
 
-
                 <div className="flex flex-col md:flex-row gap-4 justify-between">
                     <button
                         type="button"
@@ -583,7 +518,7 @@ const BankPaymentVoucherEdit = () => {
                         type="submit"
                         className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm md:text-base"
                     >
-                        Edit Bank Payment Voucher
+                        Create Journal Voucher
                     </button>
                 </div>
             </form>
@@ -591,4 +526,4 @@ const BankPaymentVoucherEdit = () => {
     )
 }
 
-export default BankPaymentVoucherEdit
+export default JournalVoucherAdd

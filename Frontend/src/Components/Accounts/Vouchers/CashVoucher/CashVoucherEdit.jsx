@@ -10,7 +10,7 @@ import { rangeBetween } from '../../../Global/GenrateCode';
 import Select from 'react-select'
 
 
-const BankPaymentVoucherEdit = () => {
+const CashVoucherEdit = () => {
     const navigate = useNavigate();
     const Client = useSelector((state) => state.Client.client)
     const [voucherType, setVoucherType] = useState("")
@@ -26,7 +26,7 @@ const BankPaymentVoucherEdit = () => {
     const ChqBook = useSelector((state) => state.ChqBook.ChqBook)
     const [unUsedChq, setUnuseChq] = useState([])
     const [chq, setChq] = useState('')
-    const BankAccountNumber = useSelector((state) => state.AdminReducer.AdminReducer)
+    const CashAccountNumber = useSelector((state) => state.AdminReducer.AdminReducer)
     const filteredAccount = Account.filter((item) => item.AccountCode.length > 5)
     const store = [{
         _id: "0",
@@ -35,10 +35,10 @@ const BankPaymentVoucherEdit = () => {
     }].concat(useSelector((state) => state.Store.Store))
 
     const result = [];
-    for (let i = BankAccountNumber.BankAccountFrom; i <= BankAccountNumber.BankAccountTo; i++) {
+    for (let i = CashAccountNumber.CashAccountFrom; i <= CashAccountNumber.CashAccountTo; i++) {
         result.push(i.toString().padStart(5, '0')); // Adjust to 5 digits
     }
-    const AllVendorDrp = Account.filter((Acc) => Acc._id == BankAccountNumber.WithholdingTax).concat(Vendor)
+    const AllVendorDrp = Account.filter((Acc) => Acc._id == CashAccountNumber.WithholdingTax).concat(Vendor)
     const AllVendor = AllVendorDrp.map((item) => ({
         label: `${item.VendorName || item.AccountName} `,
         value: item._id
@@ -49,7 +49,7 @@ const BankPaymentVoucherEdit = () => {
         value: item._id
     }));
     console.log(ALLStore)
-    const Bank = filteredAccount.filter((item) => result.some(prefix => item.AccountCode.startsWith(prefix)))
+    const Cash = filteredAccount.filter((item) => result.some(prefix => item.AccountCode.startsWith(prefix)))
     const [MainAccount, setMainAccount] = useState("");
     const [tableData, setTableData] = useState([]);
     const [unUsedCHqData, setUsedCHqData] = useState([])
@@ -69,7 +69,7 @@ const BankPaymentVoucherEdit = () => {
             value: item._id
         }));
     }
-    const BankAccount = Bank.map((item) => ({
+    const CashAccount = Cash.map((item) => ({
         label: `${item.AccountCode} ${item.AccountName}`,
         value: item._id
     }));;
@@ -111,7 +111,7 @@ const BankPaymentVoucherEdit = () => {
                         updatedRow.show = true
                     }
                     else {
-                        updatedRow.Account = BankAccountNumber.Vendor
+                        updatedRow.Account = CashAccountNumber.Vendor
                         updatedRow.vendor = value.value
                         updatedRow.show = false
 
@@ -196,14 +196,14 @@ const BankPaymentVoucherEdit = () => {
         }
         tableData.push({
             id: Date.now(),
-            Account: voucherType === "BR" ? debitAccount : creditAccount,
-            Credit: voucherType === "BP" ? Math.abs(TotalDebit - TotalCredit) : 0,
-            Debit: voucherType === "BR" ? Math.abs(TotalDebit - TotalCredit) : 0,
+            Account: voucherType === "CR" ? debitAccount : creditAccount,
+            Credit: voucherType === "CP" ? Math.abs(TotalDebit - TotalCredit) : 0,
+            Debit: voucherType === "CR" ? Math.abs(TotalDebit - TotalCredit) : 0,
             Narration: tableData[0].Narration,
             show: true
 
         })
-        voucherType === "BR" ? data.DebitAccount = debitAccount : data.CreditAccount = creditAccount
+        voucherType === "CR" ? data.DebitAccount = debitAccount : data.CreditAccount = creditAccount
         data.VoucharData = tableData,
             TotalDebit = tableData.reduce((sum, row) => sum + (parseFloat(row.Debit) || 0), 0);
         TotalCredit = tableData.reduce((sum, row) => sum + (parseFloat(row.Credit) || 0), 0);
@@ -225,10 +225,10 @@ const BankPaymentVoucherEdit = () => {
                 await updateDataFunction(`/ChqBook/ChangeStatus/${data.ChequeBook}`, UsedChq)
                 await updateDataFunction(`/ChqBook/ChangeStatus/${unUsedCHqData.value}`, unUsedChq)
             }
-            toast.success("Bank Payment Voucher Updated Successfully")
+            toast.success("Cash Payment Voucher Updated Successfully")
             console.log(res)
             setTimeout(() => {
-                navigate("/BankPaymentVoucherList");
+                navigate("/CashVoucher");
             }, 1000);
         } catch (err) {
             console.log(err)
@@ -240,7 +240,7 @@ const BankPaymentVoucherEdit = () => {
         setMainAccount(val)
         setUnuseChq([])
         ps === undefined ? setChq('') : null
-        const AllChq = ChqBook.filter((item) => item.Bank == val)
+        const AllChq = ChqBook.filter((item) => item.Cash == val)
             .map((item1) => ({
                 id: item1._id,
                 chqs: item1.Cheuques[0]
@@ -327,12 +327,12 @@ const BankPaymentVoucherEdit = () => {
         }),
     };
     const VoucherType = [{
-        value: "BP",
-        label: "BP Bank Payment Voucher",
+        value: "CP",
+        label: "CP Cash Payment Voucher",
     },
     {
-        value: "BR",
-        label: "BR Bank Recipt Voucher",
+        value: "CR",
+        label: "CR Cash Recipt Voucher",
     }
     ]
     return (
@@ -367,14 +367,14 @@ const BankPaymentVoucherEdit = () => {
                         />
                     </div>
                     {
-                        voucherType == "BP" ?
+                        voucherType == "CP" ?
                             <div>
                                 <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Credit Account </label>
                                 <Select
                                     menuPortalTarget={document.body}
                                     onChange={(selectedOption) => setCreditAccount(selectedOption.value)}
                                     styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
-                                    options={BankAccount}
+                                    options={CashAccount}
                                     value={creditAccount ? {
                                         value: `${creditAccount}`,
                                         label: `${Account.find((c) => c._id == creditAccount)?.AccountCode} ${Account.find((c) => c._id === creditAccount)?.AccountName}`
@@ -385,13 +385,13 @@ const BankPaymentVoucherEdit = () => {
                                     placeholder="Select credit account..."
                                 />
                             </div>
-                            : voucherType == "BR" ? <div>
+                            : voucherType == "CR" ? <div>
                                 <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Debit Account </label>
                                 <Select
                                     menuPortalTarget={document.body}
                                     onChange={(selectedOption) => setDebitAccount(selectedOption.value)}
                                     styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
-                                    options={BankAccount}
+                                    options={CashAccount}
                                     value={debitAccount ? {
                                         value: `${debitAccount}`,
                                         label: `${Account.find((c) => c._id === debitAccount)?.AccountCode} ${Account.find((c) => c._id === debitAccount)?.AccountName}`
@@ -583,7 +583,7 @@ const BankPaymentVoucherEdit = () => {
                         type="submit"
                         className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm md:text-base"
                     >
-                        Edit Bank Payment Voucher
+                        Edit Cash Payment Voucher
                     </button>
                 </div>
             </form>
@@ -591,4 +591,4 @@ const BankPaymentVoucherEdit = () => {
     )
 }
 
-export default BankPaymentVoucherEdit
+export default CashVoucherEdit

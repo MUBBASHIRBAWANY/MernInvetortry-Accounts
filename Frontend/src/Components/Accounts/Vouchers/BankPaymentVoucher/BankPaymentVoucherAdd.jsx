@@ -13,11 +13,15 @@ import Select from 'react-select'
 const BankPaymentVoucherAdd = () => {
     const navigate = useNavigate();
     const Account = useSelector((state) => state.ChartofAccounts.ChartofAccounts)
-    const Vendor = useSelector((state) => state.Vendor.state)
     const BankAccountNumber = useSelector((state) => state.AdminReducer.AdminReducer)
     const filteredAccount = Account.filter((item) => item.AccountCode.length > 5)
-    const ChqBook = useSelector((state) => state.ChqBook.ChqBook)
-
+    const Client = useSelector((state) => state.Client.client)
+    const [voucherType, setVoucherType] = useState("")
+    const [debitAccount, setDebitAccount] = useState("");
+    const [creditAccount, setCreditAccount] = useState("");
+    const [tableData, setTableData] = useState([]);
+    const [invDrp, setInvDrp] = useState([])
+    const [ClientInv, setClientInv] = useState([])
     const SoftStore = useSelector((state) => state.Store.Store)
     const store = [{
         _id: "0",
@@ -31,11 +35,6 @@ const BankPaymentVoucherAdd = () => {
     }
 
 
-    const AllVendorDrp = Account.filter((Acc) => Acc._id == BankAccountNumber.WithholdingTax).concat(Vendor)
-    const AllVendor = AllVendorDrp.map((item) => ({
-        label: `${item.VendorName || item.AccountName} `,
-        value: item._id
-    }));
 
     const ALLStore = store.map((item) => ({
         label: `${item.StoreName}`,
@@ -43,12 +42,7 @@ const BankPaymentVoucherAdd = () => {
     }));
 
     const Bank = filteredAccount.filter((item) => result.some(prefix => item.AccountCode.startsWith(prefix)))
-    const [MainAccount, setMainAccount] = useState("");
-    const [tableData, setTableData] = useState([]);
-    const [PaidFor, setPaidFor] = useState("vendor");
-    const [unUsedChq, setUnuseChq] = useState([])
-    const [chq, setChq] = useState('')
-    const [vendorStore, setVendorStore] = useState([])
+
 
     const loadAccounts = async (inputValue) => {
         if (!inputValue) return [];
@@ -61,7 +55,8 @@ const BankPaymentVoucherAdd = () => {
 
         return filtered.map((item) => ({
             label: `${item.AccountCode} ${item.AccountName}`,
-            value: item._id
+            value: item._id,
+            code: item.AccountCode
         }));
     }
     const BankAccount = Bank.map((item) => ({
@@ -70,7 +65,8 @@ const BankPaymentVoucherAdd = () => {
     }));;
     const startingAccount = filteredAccount.slice(0, 50).map((item) => ({
         label: `${item.AccountCode} ${item.AccountName}`,
-        value: item._id
+        value: item._id,
+        code: item.AccountCode
     }));;
     const [show, setShow] = useState(false)
     const { register, handleSubmit, reset, formState: { errors } } = useForm();
@@ -91,137 +87,146 @@ const BankPaymentVoucherAdd = () => {
         setTableData(tableData.filter(row => row.id !== id));
     };
 
-    const handleCellChange = (id, field, value) => {
-        console.log(field)
-        setTableData(tableData.map(row => {
-            if (row.id === id) {
+    const handleCellChange = async (id, field, value) => {
+        let newTableData = [...tableData];
 
-                const updatedRow = { ...row, [field]: value };
-                const checking = tableData.find((item) => item.id == id)
-                if (field == "vendor") {
-                    const checkWth = Account.find((item) => item._id == value.value)
-                    if (checkWth) {
-                         updatedRow.Account = checkWth._id
-                         updatedRow.vendor = ""
-                         updatedRow.show = true
-                    }
-                    else{
-                        updatedRow.Account = BankAccountNumber.Vendor
-                        updatedRow.vendor = value.value
-                         updatedRow.show = false
+        const rowIndex = newTableData.findIndex(row => row.id === id);
+        if (rowIndex === -1) return;
 
-                    }
-                    const someStore = Vendor.find((item) => item._id == value.value)?.Store;
-                    if (someStore) {
-                        const storeForVendor = SoftStore.filter((item) => someStore.includes(item._id))
-                            .map((s) => ({
-                                label: `${s.StoreName}`,
-                                value: s._id
-                            }))
-                        setVendorStore(storeForVendor)
-                    }
-                    else {
-                        const AllStore = SoftStore.map((item) => ({
-                            label: `${item.StoreName}`,
-                            value: item._id
-                        }))
-                        setVendorStore(AllStore)
-                    }
+        let updatedRow = { ...newTableData[rowIndex], [field]: value };
+        const checking = tableData.find((item) => item.id == id);
 
 
-                    if (checking.Account != value) {
-                        updatedRow.Debit = 0
-                        updatedRow.Credit = 0
-                    }
-                }
 
-                if (updatedRow.Account == "") {
-                    updatedRow.Debit = 0
-                    updatedRow.Credit = 0
-                }
-                if (field == "store") {
-                    updatedRow.store = value.value
-                }
+        // Reset debit/credit if no account
+        if (updatedRow.Account === "") {
+            updatedRow.Debit = 0;
+            updatedRow.Credit = 0;
+            setInvDrp([])
+            updatedRow.ClientRef2 = ""
+        }
 
-                if (field == "Account") {
-                    console.log("first")
-                    if (value.value === MainAccount) {
-                        toast.error("You cannot select the main account as a transaction account");
-                        updatedRow.Account = ""
-                    }
-                    else {
-                        updatedRow.Account = value.value
-                        updatedRow.Debit = 0
-                        updatedRow.Credit = 0
-                    }
+        // Handle store field
+        if (field === "store") {
+            updatedRow.store = value.value;
+        }
+
+        // Handle Account field
+        if (field === "Account") {
+            updatedRow.Account = value.value
+            setInvDrp([])
+            const clientAccount = Client.find((item) => item.AccountCode === value.code)?._id
+            if (clientAccount) {
+                try {
+                    const ClientInvoice = await getDataFundtion(`SaleInvoice/invoiceClient/${clientAccount}`)
+
+                    setClientInv(ClientInvoice.data)
+                    const DrpCutInv = ClientInvoice.data.map((item) => ({
+                        label: item.SalesInvoice,
+                        value: item.SalesInvoice,
+                    }))
+                    console.log(DrpCutInv)
+                    setInvDrp(DrpCutInv)
+                    updatedRow.ClientLine = "true"
+                } catch (err) {
 
                 }
-                if (field == "Debit") {
-                    updatedRow.Debit = value
-                    updatedRow.Credit = 0
-                }
-                if (field == "Credit") {
-                    updatedRow.Credit = value
-                    updatedRow.Debit = 0
-                }
-                if (field == "Ref") {
-                    updatedRow.Ref = value
-                }
 
-
-                return updatedRow;
             }
-            return row;
-        }));
+            if (value.value === debitAccount || value.value === creditAccount) {
+                toast.error("You cannot select the main account as a transaction account");
+                updatedRow.Account = "";
+            } else {
+                updatedRow.Account = value.value;
+                updatedRow.Debit = 0;
+                updatedRow.Credit = 0;
+            }
+        }
+
+        // Handle Debit field
+        if (field === "Debit") {
+            updatedRow.Debit = value;
+            updatedRow.Credit = 0;
+        }
+
+        // Handle Credit field
+        if (field === "Credit") {
+            updatedRow.Credit = value;
+            updatedRow.Debit = 0;
+        }
+
+        // Handle Ref field (async part)
+        if (field === "ClientRef2") {
+            console.log(value)
+            updatedRow.ClientRef2 = value.value;
+            const RemainInvAmt = ClientInv.find((val) => val.SalesInvoice === value.value)?.RemainingAmount
+            updatedRow.Credit = RemainInvAmt
+        }
+
+        // Update row in the new table data
+        newTableData[rowIndex] = updatedRow;
+
+        // Finally, update state
+        setTableData(newTableData);
     };
 
 
-    const TotalDebit = tableData.reduce((sum, row) => sum + (parseFloat(row.Debit) || 0), 0);
-    const TotalCredit = tableData.reduce((sum, row) => sum + (parseFloat(row.Credit) || 0), 0);
 
+
+    let TotalDebit = tableData.reduce((sum, row) => sum + (parseFloat(row.Debit) || 0), 0);
+    let TotalCredit = tableData.reduce((sum, row) => sum + (parseFloat(row.Credit) || 0), 0);
     const onSubmit = async (data) => {
-        const value = TotalDebit - TotalCredit
-        if (value <= 0) {
-            return toast.error("Credit Account Not Be Zero")
+        const value2 = TotalDebit - TotalCredit
+        console.log(value2)
+        if (value2 == 0) {
+            return toast.error("Credit and Debit Account Not Be Zero")
+        }
+        const findAccount = tableData.find((ac) => ac.Account == debitAccount)
+        if (findAccount) {
+            return toast.error("Main Account not Allow to select in table")
         }
         tableData.push({
-            id : Date.now(),
-            Account: MainAccount,
-            Credit: value,
+            id: Date.now(),
+            Account: voucherType === "BR" ? debitAccount : creditAccount,
+            Credit: voucherType === "BP" ? Math.abs(TotalDebit - TotalCredit) : 0,
+            Debit: voucherType === "BR" ? Math.abs(TotalDebit - TotalCredit) : 0,
             Narration: tableData[0].Narration,
             show: true
 
         })
-        data.PaidFor = PaidFor
+
         data.VoucharData = tableData,
-            data.VoucherMainAccount = MainAccount
-        data.Status = "false"
-        const code = await getDataFundtion('/Voucher/GetLastVouher/BP')
+        voucherType === "BR" ? data.DebitAccount = debitAccount : data.CreditAccount = creditAccount
+        data.status = "Post"
+        const code = await getDataFundtion(`/Voucher/GetLastVouher/${voucherType}`)
         console.log(code)
         if (code.length == 0) {
-            data.VoucherNumber = "BP0000001"
+            data.VoucherNumber = `${voucherType}0000001`
         } else {
             let nextVoucherNumber = (parseInt(code[0].VoucherNumber.slice('2', "9"))) + 1
             data.VoucherNumber = `BP${nextVoucherNumber.toString().padStart(7, '0')}`;
         }
-        data.VoucherType = "BP"
+        TotalDebit = tableData.reduce((sum, row) => sum + (parseFloat(row.Debit) || 0), 0);
+        TotalCredit = tableData.reduce((sum, row) => sum + (parseFloat(row.Credit) || 0), 0);
+        data.VoucherType = voucherType
         data.TotalDebit = TotalDebit
         data.TotalCredit = TotalCredit
-        data.ChequeNumber = chq.label
-        data.ChequeBook = chq.value
-        console.log(data)
-        const UsedChq = {
-            chqNumber: [chq.label],
-            Status: "used",
+        const value = TotalDebit - TotalCredit
+        console.log(value)
+        if (value !== 0) {
+            return toast.error("Credit Account Not Be Zero")
         }
-        setShow(true)
+        const invoiceData = tableData.filter((item)=> item.ClientLine == "true" )
+        .map((inv)=>({
+            amount : inv.Credit,
+            inv :  inv.ClientRef2
+        }))
+        data.invoiceData = invoiceData
         try {
+            
             console.log(data)
             const res = await createDataFunction("/Voucher", data)
-            console.log(data.ChequeNumber)
-            data.ChequeNumber !== "Online" ? updateDataFunction(`/ChqBook/ChangeStatus/${data.ChequeBook}`, UsedChq) : null
 
-            toast.success("Bank Payment Voucher Updated Successfully")
             console.log(res)
             setTimeout(() => {
                 navigate("/BankPaymentVoucherList");
@@ -237,47 +242,7 @@ const BankPaymentVoucherAdd = () => {
             }
         }
     }
-    const SetDrp = (val) => {
-        setMainAccount(val)
-        setUnuseChq([])
-        setChq('')
-        const AllChq = ChqBook.filter((item) => item.Bank == val)
-            .map((item1) => ({
-                id: item1._id,
-                chqs: item1.Cheuques[0]
-            })).flat()
-        const arr = []
-        const combined = AllChq.flatMap((item, index) => {
-            const id = item._id || item.id;
-            Object.entries(item)
-            arr.push({
-                ref: item.id,
-                chq: item.chqs
 
-            })
-
-        });
-        let result = [];
-        arr.forEach(obj => {
-            obj.chq.forEach(innerObj => {
-                result.push({
-                    ref: obj.ref,
-                    chq: innerObj.chq,
-                    status: innerObj.status
-                });
-            });
-        });
-        const unUsedchq = result.filter((item) => item.status == "unUsed")
-            .map((ch) => ({
-                value: ch.ref,
-                label: ch.chq
-            }))
-        const online = [{
-            value: "Online",
-            label: "Online"
-        }].concat(unUsedchq)
-        setUnuseChq(online)
-    }
     useEffect(() => {
         const today = new Date();
         const formatted = today.toISOString().split("T")[0]; // YYYY-MM-DD
@@ -307,10 +272,21 @@ const BankPaymentVoucherAdd = () => {
             color: '#000',
         }),
     };
+
+
+    const VoucherType = [{
+        value: "BP",
+        label: "BP Bank Payment Voucher",
+    },
+    {
+        value: "BR",
+        label: "BR Bank Recipt Voucher",
+    }
+    ]
     return (
         <div className="p-4  ">
             <ToastContainer />
-            <h1 className="text-xl md:text-3xl font-bold text-center text-gray-800 mb-6">Bank Paymnet Voucher</h1>
+            <h1 className="text-xl md:text-3xl font-bold text-center text-gray-800 mb-6">Bank Book</h1>
 
             <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-4 md:p-6 rounded-lg shadow-md">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
@@ -324,89 +300,93 @@ const BankPaymentVoucherAdd = () => {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Credit Account </label>
+                        <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Voucher Type </label>
                         <Select
                             menuPortalTarget={document.body}
-                            onChange={(selectedOption) => SetDrp(selectedOption.value)}
+                            onChange={(selectedOption) => setVoucherType(selectedOption.value)}
                             styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
-                            options={BankAccount}
-                            value={MainAccount ? {
-                                value: `${MainAccount}`,
-                                label: `${Account.find((c) => c._id === MainAccount)?.AccountCode} ${Account.find((c) => c._id === MainAccount)?.AccountName}`
-                            } : null}
+                            options={VoucherType}
+                            value={voucherType ? VoucherType.find((val) => val.value === voucherType) : null}
+                            isDisabled={tableData.length === 0 ? false : true}
                             className="basic-single text-sm"
                             classNamePrefix="select"
                             isSearchable
-                            placeholder="Select credit account..."
+                            placeholder="Voucher Type"
                         />
                     </div>
+                    {
+                        voucherType == "BP" ?
+                            <div>
+                                <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Credit Account </label>
+                                <Select
+                                    menuPortalTarget={document.body}
+                                    onChange={(selectedOption) => setCreditAccount(selectedOption.value)}
+                                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                                    options={BankAccount}
+                                    value={creditAccount ? {
+                                        value: `${creditAccount}`,
+                                        label: `${Account.find((c) => c._id === creditAccount)?.AccountCode} ${Account.find((c) => c._id === creditAccount)?.AccountName}`
+                                    } : null}
+                                    className="basic-single text-sm"
+                                    classNamePrefix="select"
+                                    isSearchable
+                                    placeholder="Select credit account..."
+                                />
+                            </div>
+                            : voucherType == "BR" ? <div>
+                                <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Debit Account </label>
+                                <Select
+                                    menuPortalTarget={document.body}
+                                    onChange={(selectedOption) => setDebitAccount(selectedOption.value)}
+                                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                                    options={BankAccount}
+                                    value={debitAccount ? {
+                                        value: `${debitAccount}`,
+                                        label: `${Account.find((c) => c._id === debitAccount)?.AccountCode} ${Account.find((c) => c._id === debitAccount)?.AccountName}`
+                                    } : null}
+                                    className="basic-single text-sm"
+                                    classNamePrefix="select"
+                                    isSearchable
+                                    placeholder="Select Debit account..."
+                                />
+                            </div>
+                                : null
+                    }
+                    {voucherType !== "" ?
+                        <>
+                            <div>
+                                <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Voucher Number </label>
+                                <input
+                                    type="text"
+                                    disabled={true}
+                                    style={{ height: "38px" }}
+                                    {...register("Voucher")}
+                                    className="w-full px-3 py-2 text-sm md:text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Chq </label>
+                                <input
+                                    type="text"
+                                    style={{ height: "38px" }}
+                                    {...register("Cheque")}
+                                    className="w-full px-3 py-2 text-sm md:text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div className='w-full col-span-1'>
+                                <label className="block text-sm md:text-base col-span-3 text-gray-700 font-semibold mb-2"> Remarks </label>
+                                <input
+                                    type="text"
+                                    style={{ height: "38px", width: "100%" }}
+                                    {...register("Remarks")}
+                                    className="w-full px-3 py-2 text-sm md:text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 col-span-5"
+                                />
+                            </div>
+                        </> : null
+                    }
 
-                    <div>
-                        <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Voucher Number </label>
-                        <input
-                            type="text"
-                            disabled={true}
-                            style={{ height: "38px" }}
-                            {...register("Voucher")}
-                            className="w-full px-3 py-2 text-sm md:text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Chq </label>
-                        <Select
-                            menuPortalTarget={document.body}
-                            onChange={(selectedOption) => setChq(selectedOption)}
-                            options={unUsedChq}
-                            value={chq ? {
-                                value: `${chq.value}`,
-                                label: `${chq.label}`
-                            } : null}
-                            styles={customStyles}
-                            className="basic-single text-sm"
-                            classNamePrefix="select"
-                            isSearchable
-                            placeholder="Select Chq..."
-                        />
-                    </div>
-                    <div className='w-full col-span-1'>
-                        <label className="block text-sm md:text-base col-span-3 text-gray-700 font-semibold mb-2">Paid To </label>
-                        <input
-                            type="text"
-                            style={{ height: "38px", width: "100%" }}
-                            {...register("PaidTo", { required: true })}
-                            className="w-full px-3 py-2 text-sm md:text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 col-span-5"
-                        />
-                    </div>
 
 
-
-                    <div className='flex gap-2 col-span-1'>
-                        <label className="text-sm md:text-base text-gray-700 font-semibold mb-2">
-                            Paid to Vendor
-                        </label>
-                        <input
-                            type="radio"
-                            name="PaidFor"
-                            value="vendor"
-                            disabled={tableData.length !== 0 ? true : false}
-                            onChange={(e) => setPaidFor(e.target.value)}
-                            checked={PaidFor === "vendor"}
-                            className="focus:ring-blue-500"
-                        />
-
-                        <label className="text-sm md:text-base text-gray-700 font-semibold mb-2">
-                            Paid to Other
-                        </label>
-                        <input
-                            type="radio"
-                            name="PaidFor"
-                            value="other"
-                            disabled={tableData.length !== 0 ? true : false}
-                            onChange={(e) => setPaidFor(e.target.value)}
-                            checked={PaidFor === "other"}
-                            className="focus:ring-blue-500"
-                        />
-                    </div>
 
 
                 </div>
@@ -415,9 +395,9 @@ const BankPaymentVoucherAdd = () => {
                     <table className="w-full border-collapse text-sm md:text-base">
                         <thead>
                             <tr className="bg-gray-100">
-                                <th className="border p-2 min-w-[200px]">{PaidFor == "other" ? "Account" : "Vendor"}</th>
-                                <th className="border p-2" style={{ width: "8vw" }} >Store</th>
+                                <th className="border p-2 min-w-[200px]">Account</th>
                                 <th className="border p-2" style={{ width: "8vw" }}>Ref</th>
+                                <th className="border p-2" style={{ width: "5vw" }}>Slip</th>
                                 <th className="border p-2" style={{ width: "5vw" }}>Debit</th>
                                 <th className="border p-2" style={{ width: "5vw" }}>Credit</th>
                                 <th className="border p-2">Narration</th>
@@ -430,27 +410,7 @@ const BankPaymentVoucherAdd = () => {
                                 <>
                                     <tr key={row.id} className="hover:bg-gray-50">
                                         <td className="border p-2">
-                                            {PaidFor == "vendor" ? <Select
-                                                menuPortalTarget={document.body}
-                                                onChange={(selectedOption) =>
-                                                    handleCellChange(row.id, 'vendor', selectedOption || '')
-                                                }
-                                                styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
-                                                options={AllVendor}
-                                                value={row.show == true ? (row.Account
-                                                    ? {
-                                                        value: row.Account,
-                                                        label: `${Account.find((c) => c._id === row.Account)?.AccountCode} ${Account.find((c) => c._id === row.Account)?.AccountName}`,
-                                                    }
-                                                    : null) : (row.vendor ? {
-                                                        value: `${row.vendor}`,
-                                                        label: `${Vendor.find((c) => c._id === row.vendor)?.VendorName}`
-                                                    } : null)}
-                                                className="basic-single text-sm"
-                                                classNamePrefix="select"
-                                                isSearchable
-                                                placeholder="Select Vendor..."
-                                            /> : <AsyncSelect
+                                            <AsyncSelect
                                                 menuPortalTarget={document.body}
                                                 onChange={(selectedOption) =>
                                                     handleCellChange(row.id, 'Account', selectedOption || '')
@@ -458,6 +418,7 @@ const BankPaymentVoucherAdd = () => {
                                                 loadOptions={loadAccounts}
                                                 styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
                                                 defaultOptions={startingAccount}
+                                                isClearable={true}
                                                 value={
                                                     row.Account
                                                         ? {
@@ -471,34 +432,26 @@ const BankPaymentVoucherAdd = () => {
                                                 isSearchable
                                                 placeholder="Select Account..."
                                             />
-                                            }
                                         </td>
-                                        <td>
-                                            <Select
-                                                menuPortalTarget={document.body}
+
+                                        <td colSpan={1} className="p-2 border-t">
+                                            <Select menuPortalTarget={document.body} styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }} options={invDrp}
                                                 onChange={(selectedOption) =>
-                                                    handleCellChange(row.id, 'store', selectedOption || '')
+                                                    handleCellChange(row.id, 'ClientRef2', selectedOption || '')
                                                 }
-                                                styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
-                                                options={PaidFor === "vendor" ? vendorStore : ALLStore}
-                                                value={row.store ? {
-                                                    value: `${row.store}`,
-                                                    label: `${ALLStore.find((c) => c.value === row.store)?.label}`
-                                                } : null}
-                                                className="basic-single text-sm"
-                                                classNamePrefix="select"
-                                                isSearchable
-                                                style={{ width: "5vw" }}
-                                                placeholder="Select Vendor..."
+                                                value={({
+                                                    value: row.ClientRef2,
+                                                    label: row.ClientRef2
+                                                })}
                                             />
                                         </td>
-                                        <td colSpan={1} className="p-2 border-t">
+                                        <td className="border p-2">
                                             <input
+                                                style={{ width: "5vw" }}
                                                 type="text"
-                                                value={row.Ref || ''}
-                                                onChange={(e) => handleCellChange(row.id, 'Ref', e.target.value)}
-                                                placeholder="Enter Ref..."
-                                                className="w-full p-2 text-xs md:text-sm border rounded"
+                                                value={row.Slip}
+                                                onChange={(e) => handleCellChange(row.id, 'Slip', e.target.value)}
+                                                className="w-full p-1 text-xs md:text-sm border rounded"
                                             />
                                         </td>
                                         <td className="border p-2">

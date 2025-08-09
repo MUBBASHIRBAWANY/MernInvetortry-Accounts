@@ -9,7 +9,7 @@ import { updateDataFunction } from '../../../Api/CRUD Functions'
 
 const ClientUpdate = () => {
     const { id } = useParams()
-    const allClient = useSelector((state) => state.Client.client)
+    const allClient = useSelector((state) => state.Client.client)   
     const Vendor = useSelector((state) => state.Vendor.state)
     const Channel = useSelector((state) => state.Channel.channel)
     const SubChannel = useSelector((state) => state.subChannel.subChannel)

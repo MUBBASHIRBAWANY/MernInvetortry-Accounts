@@ -20,7 +20,7 @@ import { fetchVendor } from '../../../../Redux/Reducers/VendorReducer';
 import { fetchChqBook } from '../../../../Redux/Reducers/ChqBookReducer';
 import { fetchStore } from '../../../../Redux/Reducers/StoreReducer';
 
-const BankPaymentVoucherList = () => {
+const JournalVoucherList = () => {
     const [rows, setRows] = useState([]);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [selectedId, setSelectedId] = useState(null);
@@ -34,21 +34,19 @@ const BankPaymentVoucherList = () => {
                 // Only fetch invoice data for display
                 const AdminiD = "68903ec2664155e11db10367"
                 const Admmin = await getDataFundtion(`/Administrative/get/${AdminiD}`)
-                const Brdata = await getDataFundtion("/Voucher?&VoucherType=BR");
-                const Bpdata = await getDataFundtion("/Voucher?&VoucherType=BP");
+                const data = await getDataFundtion("/Voucher?&VoucherType=Jv");
                 const accounts = await getDataFundtion('/ChartofAccounts')
                 const id = "687e14a624a274d5e844be49"
                 const vendor = await getDataFundtion("/vendor")
                 const res = await getDataFundtion(`/Administrative/get/${id}`)
                 const store = await getDataFundtion("/store")
-                const data = Brdata.data.concat(Bpdata.data)
                 dispatch(fetchStore(store.data))
                 dispatch(fetchAdminReducer(res.data))
                 dispatch(fetchVendor(vendor.data))
                 dispatch(fetchAdminReducer(Admmin.data))
                 dispatch(fetchChartofAccounts(accounts.data))
                 setRows(data || []);
-                dispatch(fetchVoucher(data || []));
+                dispatch(fetchVoucher(data.data || []));
 
 
                 // Preload customers only once
@@ -64,7 +62,7 @@ const BankPaymentVoucherList = () => {
     }, [dispatch]);
 
     const handleEditClick = (id) => {
-        navigate(`/BankPaymentVoucherEdit/${id}`);
+        navigate(`/JournalVoucherEdit/${id}`);
     };
 
     const handleViewClick = (id) => {
@@ -111,10 +109,7 @@ const BankPaymentVoucherList = () => {
                 </span>
             )
         },
-        {
-            field: 'DebitAccount', headerName: 'Voucher Account', width: 360,
-            renderCell: (params) => Accounts.find((item) => item._id == params.value)?.AccountName || Accounts.find((item) => item._id == params.row.CreditAccount)?.AccountName ,
-        },
+      
         { field: 'status', headerName: 'Status', width: 150, },
         {
             field: 'DebitTotal',
@@ -194,4 +189,4 @@ const BankPaymentVoucherList = () => {
     );
 };
 
-export default BankPaymentVoucherList;
+export default JournalVoucherList;

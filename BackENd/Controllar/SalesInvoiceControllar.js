@@ -118,7 +118,7 @@ export const getLimitedSaleInvoice = async (req, res) => {
 
 export const UpdateSalesInvoice = async (req, res) => {
     const { id } = req.params
-    const { Client, SaleInvoiceData, SaleInvoiceDate, SalesFlowRef ,LessAccount, AddAccount, LessAmount, AddAmount } = req.body
+    const { Client, SaleInvoiceData, SaleInvoiceDate, SalesFlowRef, LessAccount, AddAccount, LessAmount, AddAmount } = req.body
     try {
         const stockChecks = await Promise.all(
             SaleInvoiceData.map(async item => {
@@ -155,9 +155,9 @@ export const UpdateSalesInvoice = async (req, res) => {
                 SalesInvoiceDate: SaleInvoiceDate,
                 SalesFlowRef,
                 PostStatus: false,
-                LessAccount, 
-                AddAccount, 
-                LessAmount, 
+                LessAccount,
+                AddAccount,
+                LessAmount,
                 AddAmount
             })
             res.status(200).send(data)
@@ -196,7 +196,7 @@ export const deleteSaleInvoice = async (req, res) => {
 export const postSalesinvoice = async (req, res) => {
     const { status, AccountsData, VoucherNumber } = req.body;
     const { id } = req.params;
-
+    console.log(status, VoucherNumber)
 
     try {
         if (status === true) {
@@ -210,7 +210,7 @@ export const postSalesinvoice = async (req, res) => {
             }
 
             await SalesInvoiceModal.findByIdAndUpdate(id, { PostStatus: true });
-            await VoucherModal.create(AccountsData)
+            await VoucherModal.create(AccountsData[0])
             return res.status(200).json({
                 success: true,
                 message: "Invoice posted, stock reduced, and amount updated"
@@ -225,7 +225,11 @@ export const postSalesinvoice = async (req, res) => {
                 });
             }
             await SalesInvoiceModal.findByIdAndUpdate(id, { PostStatus: false });
-            await VoucherModal.deleteOne({ VoucherNumber: VoucherNumber })
+            const voucher = await VoucherModal.find({ VoucherNumber: VoucherNumber })
+            console.log(voucher)
+            if (voucher) {
+                await VoucherModal.findByIdAndDelete(voucher[0]._id)
+            }
             return res.status(200).json({
                 success: true,
                 message: "Invoice unposted, stock and amount restored"
@@ -468,3 +472,14 @@ export const getOnlyRemain = async (req, res) => {
         res.status(400).send("some thing went wrong");
     }
 };
+
+export const getInvoiceByClient = async (req , res) => {
+    const {Client} = req.params
+    try {
+        const data = await SalesInvoiceModal.find({Client : Client , RemainingAmount: { $ne: 0, $exists: true }})
+        console.log(data)
+        res.status(200).send({ status: true, data });
+    } catch (err) {
+        res.status(400).send("some thing went wrong");
+    }
+}

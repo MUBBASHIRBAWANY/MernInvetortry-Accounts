@@ -54,10 +54,7 @@ const SaleInvoiceUnPostModal = () => {
                 return ({
                     id: item._id,
                     status: false,
-                    data: item.SalesData,
-                    Store : item.Store,
-                    Location : item.Location,
-                    SalesInvoice : item.SalesInvoice
+                    VoucherNumber : `Sl${item.SalesInvoice}`
                 })
             })
             console.log(allfalse)

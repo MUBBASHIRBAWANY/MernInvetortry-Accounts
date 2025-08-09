@@ -1,27 +1,47 @@
+import SaleOrderDcModal from "../modal/SaleOrderDcModal.js";
+import SalesInvoiceModal from "../modal/SalesInvoiceModal.js";
 import VoucherModal from "../modal/VoucherModal.js";
 
 
 export const createVoucher = async (req, res) => {
     try {
-        const { VoucherNumber, ChequeNumber, VoucherMainAccount } = req.body;
-        console.log(ChequeNumber)
-        const existingChq = await VoucherModal.findOne({ ChequeNumber: ChequeNumber })
-        console.log(existingChq)
-        if (existingChq) {
+        const { VoucherNumber, ChequeNumber, VoucherMainAccount, invoiceData } = req.body;
 
-            return res.status(401).json({ message: `Chq All ready in used in ${existingChq.VoucherNumber}` });
-        }
-        const existingVoucher = await VoucherModal.findOne({ VoucherNumber: VoucherNumber });
+        // Check if voucher number already exists
+        const existingVoucher = await VoucherModal.findOne({ VoucherNumber });
         if (existingVoucher) {
             return res.status(400).json({ message: "Voucher number already exists" });
         }
+
+        // Reduce invoice amount
+        for (const item of invoiceData) {
+            console.log(item)
+            const inv = await SalesInvoiceModal.findOne({ SalesInvoice: item.inv });
+            console.log(inv)
+            if (!inv) {
+                return res.status(404).json({ message: `Invoice ${item.inv} not found` });
+            }
+
+            await SalesInvoiceModal.findByIdAndUpdate(inv._id, {
+                RemainingAmount: inv.RemainingAmount - Number(item.amount),
+                RecivedAmount: inv.RecivedAmount + Number(item.amount)
+            });
+        }
+
         // Create a new voucher
-        const voucherData = req.body;
-        const newVoucher = new VoucherModal(voucherData);
+        const newVoucher = new VoucherModal(req.body);
         await newVoucher.save();
-        res.status(201).json({ message: "Voucher created successfully", voucher: newVoucher });
+
+        res.status(201).json({
+            message: "Voucher created successfully",
+            voucher: newVoucher
+        });
+
     } catch (error) {
-        res.status(500).json({ message: "Error creating voucher", error: error.message });
+        res.status(500).json({
+            message: "Error creating voucher",
+            error: error.message
+        });
     }
 }
 
@@ -192,7 +212,7 @@ export const getVoucherByNumber = async (req, res) => {
 export const deleteVoucherByNumber = async (req, res) => {
     try {
         const { VoucherNumber } = req.params;
-        const deletedVoucher = await VoucherModal.deleteOne({VoucherNumber : VoucherNumber});
+        const deletedVoucher = await VoucherModal.deleteOne({ VoucherNumber: VoucherNumber });
         if (!deletedVoucher) {
             return res.status(404).json({ message: "Voucher not found" });
         }

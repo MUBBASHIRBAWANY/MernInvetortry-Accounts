@@ -153,6 +153,10 @@ import OrderDCListPage from "../Pages/OrderDC/OrderDCListPage"
 import OrderDCAddPage from "../Pages/OrderDC/OrderDCAddPage"
 import OrderDCEditPage from "../Pages/OrderDC/OrderDCEditPage"
 import OrderDCViewPage from "../Pages/OrderDC/OrderDCViewPage"
+import CashVoucherListPage from "../Pages/Accounts/Voucher/CashVoucher/CashVoucherListPage"
+import CashVoucherAddPage from "../Pages/Accounts/Voucher/CashVoucher/CashVoucherAddPage"
+import CashVoucherEditPage from "../Pages/Accounts/Voucher/CashVoucher/CashVoucherEditPage"
+import JournalVoucherListPage from "../Pages/Accounts/Voucher/JournalVoucher/JournalVoucherListPage"
 
 
 
@@ -747,7 +751,7 @@ const routes = [
         path: "/SaleOrder",
         component: <SaleOrderListPage />
     },
-     {
+    {
         path: "/SaleOrderAdd",
         component: <SaleOrderAddPage />
     },
@@ -755,19 +759,19 @@ const routes = [
         path: "/SaleOrderEdit/:id",
         component: <SaleOrderEditPage />
     },
-     {
+    {
         path: "/SaleOrderView/:id",
         component: <SaleOrderViewPage />
     },
-         {
+    {
         path: "/OrderDCList",
         component: <OrderDCListPage />
     },
-     {
+    {
         path: "/OrderDCAdd",
         component: <OrderDCAddPage />
     },
-     {
+    {
         path: "/OrderDCEdit/:id",
         component: <OrderDCEditPage />
     },
@@ -775,6 +779,22 @@ const routes = [
         path: "/OrderDCView/:id",
         component: <OrderDCViewPage />
     },
+    {
+        path: "/CashVoucher",
+        component: <CashVoucherListPage />
+    },
+    {
+        path: "/CashVoucherAdd",
+        component: <CashVoucherAddPage />
+    },
+    {
+        path: "/CashVoucherEdit/:id",
+        component: <CashVoucherEditPage />
+    },
+       {
+        path: "/JournalVoucherList",
+        component: <JournalVoucherListPage />
+    }
 
 ]
 

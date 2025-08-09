@@ -17,8 +17,9 @@ const SaleInvoicePostModal = () => {
     const [submit, setSubmit] = useState(false)
     const invoices = useSelector((state) => state.SalesInvoice.SalesInvoice)
     const Accounts = useSelector((state) => state.ChartofAccounts.ChartofAccounts);
-      const Client = useSelector((state) => state.Client.client)
-    
+    const Client = useSelector((state) => state.Client.client)
+    const Admin = useSelector((state) => state.AdminReducer.AdminReducer)
+
 
     const loadInvoiceOptions = async (inputValue) => {
         if (!inputValue) return [];
@@ -51,61 +52,91 @@ const SaleInvoicePostModal = () => {
         e.preventDefault();
         const data = []
         console.log(selectedInvoiceFrom.value, selectedInvoiceTo.value);
-        if (selectedInvoiceFrom.value >= selectedInvoiceTo.value) {
-            return toast.error("Invoiceto Must Be Graterthen InvoiceTo")
-        }
-        else {
-            const filtervalues = invoices.filter(obj => obj.SalesInvoice >= selectedInvoiceFrom.value && obj.SalesInvoice <= selectedInvoiceTo.value)
-            console.log(filtervalues)
-            const allTrue = filtervalues.filter((item) => item.PostStatus !== true).map((item) => {
-                return ({
-                    id: item._id,
-                    status: true,
 
-                    AccountsData: [
-                        {
-                            VoucherType: "SL",
-                            VoucherNumber: `Sl${item.SalesInvoice}`,
-                            VoucherDate: item.SalesInvoiceDate,
-                            status: "Post",
-                            VoucharData: [
-                                {
-                                    Account: Accounts.find((Ac)=> Ac.AccountCode === Client.find((C)=> C._id === item.Client).AccountCode)._id,
-                                    Debit : Number(item.TotalAmount) - Number(item.AddAmount || 0) + Number(item.LessAmount || 0),
-                                    Store : item.Store,
-                                }
-                            ]
 
-                        }
-                    ]
-                })
+        const filtervalues = invoices.filter(obj => obj.SalesInvoice >= selectedInvoiceFrom.value && obj.SalesInvoice <= selectedInvoiceTo.value)
+        console.log(filtervalues)
+        const allTrue = filtervalues.filter((item) => item.PostStatus !== true).map((item) => {
+            return ({
+                id: item._id,
+                status: true,
+
+                AccountsData: [
+                    {
+                        VoucherType: "SL",
+                        VoucherNumber: `Sl${item.SalesInvoice}`,
+                        VoucherDate: item.SalesInvoiceDate,
+                        status: "Post",
+                        VoucharData: [
+                            {
+                                Account: Accounts.find((Ac) => Ac.AccountCode === Client.find((C) => C._id === item.Client).AccountCode)._id,
+                                Debit: (Number(item.TotalAmount) - Number(item.AddAmount || 0) + Number(item.LessAmount || 0)),
+                                Store: item.Store,
+                            },
+                            {
+                                Account: Admin.SaleDiscount,
+                                Debit: item.SalesData.reduce((sum, row) => sum + (parseFloat(row.Discount) || 0), 0),
+                                Store: item.Store,
+                            },
+                            {
+                                Account: Admin.salesRevenue,
+                                Credit: item.SalesData.reduce((sum, row) => sum + (parseFloat(row.Discount) || 0), 0) + (Number(item.TotalAmount) - Number(item.AddAmount || 0) + Number(item.LessAmount || 0)),
+                                Store: item.Store,
+                            },
+                            {
+                                Account: Accounts.find((Ac) => Ac.AccountCode === Client.find((C) => C._id === item.Client).AccountCode)._id,
+                                Debit: Number(item.AddAmount || 0),
+                                Store: item.Store,
+                            },
+                            {
+                                Account: item.AddAccount,
+                                Credit: Number(item.AddAmount || 0),
+                                Store: item.Store,
+                            },
+                            {
+                                Account: Accounts.find((Ac) => Ac.AccountCode === Client.find((C) => C._id === item.Client).AccountCode)._id,
+                                Credit: Number(item.LessAmount || 0),
+                                Store: item.Store,
+                            },
+                            {
+                                Account: item.LessAccount,
+                                Debit: Number(item.LessAmount || 0),
+                                Store: item.Store,
+                            },
+                        ].filter(
+                            item => (item.Debit ?? 0) !== 0 || (item.Credit ?? 0) !== 0
+                        )
+
+                    }
+                ]
             })
-            console.log(allTrue)
-            for (const item of allTrue) {
-                try {
-                    // const res = await updateDataFunction(`SaleInvoice/ChangeStatus/${item.id}`, item)
-                    // dispatch(updateDateSalesInvoice(item))
-                } catch (err) {
+        })
+        console.log(allTrue)
+        for (const item of allTrue) {
+            try {
+                const res = await updateDataFunction(`SaleInvoice/ChangeStatus/${item.id}`, item)
+                dispatch(updateDateSalesInvoice(item))
+            } catch (err) {
 
-                    const error = err?.response?.data?.errors
-                    if (error) {
+                const error = err?.response?.data?.errors
+                if (error) {
+                    console.log(error)
+                    try {
+                        const notAvalible = `this product not avalibale ${Products.find((item) => item._id == error[0]).ProductName}`
+                        toast.error(notAvalible)
+                    }
+                    catch {
                         console.log(error)
-                        try {
-                            const notAvalible = `this product not avalibale ${Products.find((item) => item._id == error[0]).ProductName}`
-                            toast.error(notAvalible)
-                        }
-                        catch {
-                            console.log(error)
-                            const notAvalible = `In Inv#${item.SalesInvoice} Qty of ${Products.find((item) => item._id == error[0].product).ProductName} Avalibale Qty ${error[0].qty}  you need ${error[0].Req} Boxes`
-                            toast.error(notAvalible)
-                        }
+                        const notAvalible = `In Inv#${item.SalesInvoice} Qty of ${Products.find((item) => item._id == error[0].product).ProductName} Avalibale Qty ${error[0].qty}  you need ${error[0].Req} Boxes`
+                        toast.error(notAvalible)
                     }
                 }
-
-
-
             }
+
+
+
         }
+
         setSelectedInvoiceFrom(null)
         setSelectedInvoiceTo(null)
         setIsOpen(false);

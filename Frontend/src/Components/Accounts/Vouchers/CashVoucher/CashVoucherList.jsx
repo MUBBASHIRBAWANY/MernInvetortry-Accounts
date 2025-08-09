@@ -20,7 +20,7 @@ import { fetchVendor } from '../../../../Redux/Reducers/VendorReducer';
 import { fetchChqBook } from '../../../../Redux/Reducers/ChqBookReducer';
 import { fetchStore } from '../../../../Redux/Reducers/StoreReducer';
 
-const BankPaymentVoucherList = () => {
+const CashVoucherList = () => {
     const [rows, setRows] = useState([]);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [selectedId, setSelectedId] = useState(null);
@@ -34,8 +34,8 @@ const BankPaymentVoucherList = () => {
                 // Only fetch invoice data for display
                 const AdminiD = "68903ec2664155e11db10367"
                 const Admmin = await getDataFundtion(`/Administrative/get/${AdminiD}`)
-                const Brdata = await getDataFundtion("/Voucher?&VoucherType=BR");
-                const Bpdata = await getDataFundtion("/Voucher?&VoucherType=BP");
+                const Brdata = await getDataFundtion("/Voucher?&VoucherType=CR");
+                const Bpdata = await getDataFundtion("/Voucher?&VoucherType=CP");
                 const accounts = await getDataFundtion('/ChartofAccounts')
                 const id = "687e14a624a274d5e844be49"
                 const vendor = await getDataFundtion("/vendor")
@@ -64,7 +64,7 @@ const BankPaymentVoucherList = () => {
     }, [dispatch]);
 
     const handleEditClick = (id) => {
-        navigate(`/BankPaymentVoucherEdit/${id}`);
+        navigate(`/CashVoucherEdit/${id}`);
     };
 
     const handleViewClick = (id) => {
@@ -194,4 +194,4 @@ const BankPaymentVoucherList = () => {
     );
 };
 
-export default BankPaymentVoucherList;
+export default CashVoucherList;
