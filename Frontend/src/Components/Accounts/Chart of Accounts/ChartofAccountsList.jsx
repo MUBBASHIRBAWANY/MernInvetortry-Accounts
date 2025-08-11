@@ -18,10 +18,26 @@ const ChartofAccountsList = () => {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const navigate = useNavigate()
   const [selectedId, setSelectedId] = useState(null);
-
+  const pageName = "List Chart of Accounts"
+  const DeleteRight = "Delete Chart of Accounts"
   const dispatch = useDispatch()
-
   const [deleteR, setdeleteR] = useState(false)
+  const UserRihts = useSelector((state) => state.UsersRights.UserRights)
+
+
+
+
+  const checkAcess = async () => {
+    const allowAcess = await UserRihts.find((item) => item == DeleteRight)
+    console.log(allowAcess)
+    if (allowAcess) {
+      setdeleteR(true)
+    }
+    const viweAcess = await UserRihts.find((item) => item == pageName)
+    if (!viweAcess) {
+      navigate("/")
+    }
+  }
   const getData = async () => {
     try {
       const data = await getDataFundtion("/ChartofAccounts")
@@ -37,11 +53,11 @@ const ChartofAccountsList = () => {
         return ({
           AccountCode: item.AccountCode,
           AccountName: item.AccountName,
-          Stage : "Stage"+item.Stage,
-          _id : item._id,
-          Stage1 : list.find((item1)=> item1._id == item.Stage1)?.AccountName,
-          Stage2 : list.find((item1)=> item1._id == item.Stage2)?.AccountName,
-          Stage3 : list.find((item1)=> item1._id == item.Stage3)?.AccountName
+          Stage: "Stage" + item.Stage,
+          _id: item._id,
+          Stage1: list.find((item1) => item1._id == item.Stage1)?.AccountName,
+          Stage2: list.find((item1) => item1._id == item.Stage2)?.AccountName,
+          Stage3: list.find((item1) => item1._id == item.Stage3)?.AccountName
         })
       })
 
@@ -55,6 +71,7 @@ const ChartofAccountsList = () => {
 
   useEffect(() => {
     getData()
+    checkAcess()
   }, [])
 
   const handleEditClick = (id) => {
@@ -69,13 +86,18 @@ const ChartofAccountsList = () => {
 
   const handleConfirmDelete = async () => {
     setOpenDeleteDialog(false);
-    setRows(rows.filter((row) => row._id !== selectedId));
-    deleteDataFunction(`/ChartofAccounts/deletChartofAccounts/${selectedId}`)
+    if (deleteR) {
+
+      setRows(rows.filter((row) => row._id !== selectedId));
+      deleteDataFunction(`/ChartofAccounts/deletChartofAccounts/${selectedId}`)
+    } else {
+      toast.error("Access Denied")
+    }
   };
   const columns = [
     { field: 'AccountCode', headerName: 'Account Code', width: 250, },
     { field: 'AccountName', headerName: 'Accounts Name', width: 450, },
-    { field: 'Stage', headerName: 'Stage', width: 200},
+    { field: 'Stage', headerName: 'Stage', width: 200 },
     { field: 'Stage1', headerName: 'Stage 1', width: 200 },
     { field: 'Stage2', headerName: 'Stage 2', width: 200 },
     { field: 'Stage3', headerName: 'Stage 3', width: 200 },

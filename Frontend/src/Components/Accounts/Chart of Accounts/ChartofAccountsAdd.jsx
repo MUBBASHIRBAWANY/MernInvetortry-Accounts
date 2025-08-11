@@ -54,6 +54,21 @@ const ChartofAccountsAdd = () => {
     const stage = Number(watch("Stage", 1))
     console.log(stage);
 
+  const UserRihts = useSelector((state) => state.UsersRights.UserRights)
+  const pageName = "Add Chart of Accounts"
+  const checkAcess = async () => {
+    const allowAcess = await UserRihts.find((item) => item == pageName)
+    console.log(allowAcess)
+    if (!allowAcess) {
+      navigate("/")
+    }
+  }
+
+  useEffect(() => {
+    checkAcess()
+  }, [])
+
+
     const onSubmit = async (data) => {
         console.log(data)
         if (data.Stage == "1") {

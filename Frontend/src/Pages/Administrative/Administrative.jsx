@@ -67,7 +67,6 @@ const Administrative = () => {
         setDitributerDiscount(adminData.DitributerDiscount)
         setWithholdingTax(adminData.WithholdingTax)
         setGst(adminData.Gst)
-        console.log(gst)
         dispatch(fetchChartofAccounts(list))
         dispatch(fetchAdminReducer(adminData))
         reset({

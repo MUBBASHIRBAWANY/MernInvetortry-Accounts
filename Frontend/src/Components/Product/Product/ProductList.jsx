@@ -18,8 +18,8 @@ import { toast, ToastContainer } from 'react-toastify';
 import { deleteDataFunction, getDataFundtion } from '../../../Api/CRUD Functions';
 import ExcelExport from '../../Global/ExcalData';
 const ProductList = () => {
-  const DeleteRight = "ProductDelete"
-  const pageName = "ProductList"
+  const DeleteRight = "Delete SKU"
+  const pageName = "List SKU"
   const [rows, setRows] = useState();
   const dispatch = useDispatch()
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -41,10 +41,6 @@ const ProductList = () => {
     const data = await getDataFundtion("/product")
     setRows(data.data)
     dispatch(fetchproduct(data.data))
-    dispatch(fetchMasterSku(mastersku.data))
-    dispatch(fetchCategory(category.data))
-    dispatch(fetchbrand(brand.data))
-    dispatch(fetchVendor(vendor.data))
 
   }
 

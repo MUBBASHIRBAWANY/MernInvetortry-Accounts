@@ -16,7 +16,7 @@ const VendorAdd = () => {
     reset,
   } = useForm();
   const navigate = useNavigate()
-  const pageName = "VenderAdd"
+  const pageName = "Add Vendor"
   const UserRihts = useSelector((state) => state.UsersRights.UserRights)
   const Store = useSelector((state) => state.Store.Store)
   const [activeTab, setActiveTab] = useState('basic');

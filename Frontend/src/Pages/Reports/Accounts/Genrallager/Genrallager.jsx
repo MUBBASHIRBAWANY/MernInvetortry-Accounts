@@ -110,7 +110,9 @@ console.log(loginVendor)
             Account: SelectedAccount,
             AcName : Accounts.find((item)=> item._id == SelectedAccount).AccountName,
             AcCode : Accounts.find((item)=> item._id == SelectedAccount).AccountCode,
-            PrintedBy : `${loginVendor.firstname}`
+            PrintedBy : `${loginVendor.firstname}`,
+            chartofAccount : Accounts
+
         }
         const interval = setInterval(() => {
             const mountNode = popup.document.getElementById('popup-root');

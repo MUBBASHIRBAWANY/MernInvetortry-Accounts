@@ -27,7 +27,18 @@ const LocationEdit = () => {
         }
 
     }
+     const UserRihts = useSelector((state) => state.UsersRights.UserRights)
+      const pageName = "Edit Location"
+      const checkAcess = async () => {
+        const allowAcess = await UserRihts.find((item) => item == pageName)
+        console.log(allowAcess)
+        if (!allowAcess) {
+          navigate("/")
+        }
+      }
+    
     useEffect(() => {
+        checkAcess()
 
         getData()
     }, [])

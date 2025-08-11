@@ -29,9 +29,20 @@ const ChartofAccountsEdit = () => {
 
   const stage = Number(watch("Stage", 1));
 
+  const UserRihts = useSelector((state) => state.UsersRights.UserRights)
+    const pageName = "Edit Chart of Accounts"
+    const checkAcess = async () => {
+      const allowAcess = await UserRihts.find((item) => item == pageName)
+      console.log(allowAcess)
+      if (!allowAcess) {
+        navigate("/")
+      }
+    }
+  
   useEffect(() => {
     const tree = buildTree(Accounts);
     setTreeData(tree);
+    checkAcess()
   }, [Accounts]);
 
   useEffect(() => {

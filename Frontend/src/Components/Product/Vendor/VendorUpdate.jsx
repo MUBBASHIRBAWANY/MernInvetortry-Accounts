@@ -61,7 +61,7 @@ const VendorUpdate = () => {
         }
     }
 
-    const pageName = "VenderEdit"
+    const pageName = "Edit Vendor"
     const UserRihts = useSelector((state) => state.UsersRights.UserRights)
     const checkAcess = async () => {
         const allowAcess = await UserRihts.find((item) => item == pageName)

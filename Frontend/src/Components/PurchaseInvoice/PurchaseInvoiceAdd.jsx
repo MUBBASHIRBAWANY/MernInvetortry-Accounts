@@ -9,6 +9,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { createDataFunction, getDataFundtion } from '../../Api/CRUD Functions';
 import AsyncSelect from 'react-select/async';
 import { fetchproduct } from '../../Redux/Reducers/ProductReducer';
+import { fetchPurchaseInvoice } from '../../Redux/Reducers/PurchaseInvoiceReducer';
 
 
 const PurchaseInvoiceAdd = () => {
@@ -33,8 +34,18 @@ const PurchaseInvoiceAdd = () => {
   const [lginerlocation, setlginerlocation] = useState([])
 
   const AllVendor1 = Vendor.find((item) => item._id == loginVendor.Vendor[0])
-  const AllVendor = { value: AllVendor1?._id, label: AllVendor1?.VendorName }
+  const AllVendor = Vendor.map((item) => ({
+    value: item?._id, label: item?.VendorName
+  }))
   const dispatch = useDispatch()
+
+  useEffect(() => {
+    const today = new Date();
+    const formatted = today.toISOString().split("T")[0]; // YYYY-MM-DD
+    reset({
+      PurchaseInvoiceDate: formatted
+    })
+  }, []);
 
   const getData = async () => {
     const arrProduct = Products.length == 0 ? await getDataFundtion('/product') : Products
@@ -53,6 +64,7 @@ const PurchaseInvoiceAdd = () => {
 
 
     }
+
     else {
       const Userstore = Store.filter((item, index) => loginVendor?.Store[index])
       const UserLocation = location.filter((item, index) => loginVendor?.Location[index])
@@ -90,7 +102,7 @@ const PurchaseInvoiceAdd = () => {
   useEffect(() => {
     getData()
   }, [])
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const { register, handleSubmit, formState: { errors }, reset } = useForm();
 
   const addNewRow = () => {
     setTableData([...tableData, {
@@ -181,7 +193,7 @@ const PurchaseInvoiceAdd = () => {
           updatedRow.netAmuntWithAdvnaceTax = updatedRow.netAmunt;
 
         }
-        if (field === "box" || field === "carton" || field ===  "Rate") {
+        if (field === "box" || field === "carton" || field === "Rate") {
           console.log(findProduct)
           if (findProduct) {
             const BoxinCarton = parseInt(findProduct.BoxinCarton || 0);
@@ -212,8 +224,7 @@ const PurchaseInvoiceAdd = () => {
             findProduct.SaleTaxBy == 2 ? updatedRow.Gst = updatedRow.RetailValue / 100 * findProduct.SaleTaxPercent : updatedRow.Gst = updatedRow.GrossAmount / 100 * findProduct.SaleTaxPercent - updatedRow.discount
             updatedRow.ValuewithGst = updatedRow.Gst + updatedRow.ValueAfterDiscout
             updatedRow.netAmunt = parseFloat(updatedRow.ValuewithGst - updatedRow.AfterTaxdiscount).toFixed(4)
-            updatedRow.AdvanceTax = parseFloat((updatedRow.netAmunt / 100) * 0.1).toFixed(4)
-            updatedRow.netAmuntWithAdvnaceTax = parseFloat(Number(updatedRow.netAmunt) + Number(updatedRow.AdvanceTax)).toFixed(5)
+            updatedRow.netAmuntWithAdvnaceTax = parseFloat(Number(updatedRow.netAmunt))
             updatedRow.totalBox = totalBox
 
           }
@@ -235,9 +246,11 @@ const PurchaseInvoiceAdd = () => {
   const totalValueAfterDiscount = tableData.reduce((sum, row) => sum + (parseFloat(row.ValueAfterDiscout) || 0), 0);
   const totalValuewithGst = tableData.reduce((sum, row) => sum + (parseFloat(row.ValuewithGst) || 0), 0);
   const totalAfterTaxdiscount = tableData.reduce((sum, row) => sum + (parseFloat(row.AfterTaxdiscount) || 0), 0);
-  const totalAdvanceTax = tableData.reduce((sum, row) => sum + (parseFloat(row.AdvanceTax) || 0), 0);
-
   const onSubmit = async (data) => {
+    const findUndinvoice = tableData.filter((item) => item.netAmuntWithAdvnaceTax === NaN || item.Product === "" || item.carton === 0 || item.netAmuntWithAdvnaceTax < 0)
+    if (findUndinvoice.length !== 0) {
+      return toast.error("error in product table")
+    }
     loginVendor.userType == 1 ? data.Vendor = loginVendor.Vendor[0] : data.Vendor = defVen
     data.PurchaseData = tableData
     data.VendorCode = loginVendor.userType == 1 ? Vendor.find((item) => item._id == loginVendor.Vendor).code : Vendor.find((item) => item._id == defVen).code
@@ -245,14 +258,14 @@ const PurchaseInvoiceAdd = () => {
     data.Store = loginVendor.userType == 1 ? lginerStore._id : selectedStore
     console.log(data)
     try {
-      console.log(data)
       const res = await createDataFunction('/PurchaseInvoice', data)
-      console.log(res)
+      dispatch(fetchPurchaseInvoice([res]))
       toast.success("Data Add")
       setTimeout(() => {
-        navigate('/PurchaseInvoiceList')
+        navigate(`/PurchaseInvoiceView/${res._id}`)
       }, 2000)
     } catch (err) {
+      console.log(err)
       toast.error("Some Thing Went Wrong")
     }
 
@@ -268,7 +281,7 @@ const PurchaseInvoiceAdd = () => {
   return (
     <div className=" p-4">
       <ToastContainer />
-      <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">Create Purchase Invoice </h1>
+      <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">Purchase Invoice </h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-6 rounded-lg shadow-md">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -285,9 +298,8 @@ const PurchaseInvoiceAdd = () => {
             <label className="block text-gray-700 font-semibold mb-2">Vendor</label>
             <Select
               onChange={(vals) => setDefven(vals.value)}
-              options={loginVendor.userType == 1 ? AllVendor : VendorDrp}
-              defaultValue={loginVendor.userType == 1 ? AllVendor : null}
-              isDisabled={loginVendor.userType == 1 ? true : false || tableData.length != 0 ? true : false}
+              options={AllVendor}
+              isDisabled={tableData.length != 0 ? true : false}
               className="basic-single"
               classNamePrefix="select"
               isSearchable
@@ -351,8 +363,6 @@ const PurchaseInvoiceAdd = () => {
                 <th className="border p-2">Discount </th>
                 <th className="border p-2"> Trade Value After Discount</th>
                 <th className="border p-2">Gst</th>
-                <th className="border p-2">Trade Value with Gst</th>
-                <th>After Gst Discount</th>
 
                 <th className="border p-2">Net Amount </th>
                 <th className="border p-2">Action</th>
@@ -411,17 +421,7 @@ const PurchaseInvoiceAdd = () => {
                   <td className="border p-2">
                     {row.Gst}
                   </td>
-                  <td className="border p-2">
-                    {row.ValuewithGst}
-                  </td>
-                  <td className="border p-2">
-                    <input
-                      type="number"
-                      value={row.AfterTaxdiscount}
-                      onChange={(e) => handleCellChange(row.id, 'AfterTaxdiscount', e.target.value)}
-                      className="w-full p-1 border rounded"
-                    />
-                  </td>
+                 
                   <td className="border p-2">
                     {row.netAmunt}
                   </td>
@@ -450,8 +450,6 @@ const PurchaseInvoiceAdd = () => {
                   <td className="border p-2">{totalDiscount.toFixed(2)}</td>
                   <td className="border p-2">{totalValueAfterDiscount.toFixed(2)}</td>
                   <td className="border p-2">{totalGST.toFixed(2)}</td>
-                  <td className="border p-2">{totalValuewithGst.toFixed(2)}</td>
-                  <td className="border p-2">{totalAfterTaxdiscount.toFixed(2)}</td>
                   <td className="border p-2">{totalNetAmount.toFixed(2)}</td>
                   <td className="border p-2"></td>
                   <td className="border p-2"></td>

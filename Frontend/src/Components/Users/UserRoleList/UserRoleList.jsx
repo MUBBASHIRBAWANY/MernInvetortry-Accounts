@@ -17,12 +17,12 @@ const UserRoleList = () => {
   const dispatch = useDispatch()
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
-  const [deleteR, setdeleteR] = useState(false)
   const navigate = useNavigate()
-  const pageName = "UserRoleList"
-  const DeleteRight = "UserRoleDelete"
-  const UserRihts = useSelector((state) => state.UsersRights.UserRights)
   const UserDetial = useSelector((state) => state.LoginerReducer.userDetail)
+  const [deleteR, setdeleteR] = useState(false)
+  const pageName =  "List User Role"
+  const DeleteRight = "Delete User Role"
+  const UserRihts = useSelector((state) => state.UsersRights.UserRights)
   
   console.log(UserDetial)
     const getData = async () => {
@@ -49,8 +49,7 @@ const UserRoleList = () => {
     }
   }
   useEffect(() => {
-    //checkAcess()
-
+    checkAcess()
     getData()
   }, [])
 
@@ -71,6 +70,7 @@ const UserRoleList = () => {
     if (deleteR) {
       setRows(rows.filter((row) => row._id !== selectedId));
         deleteDataFunction(`/userRole/DeleteRole/${selectedId}`)
+        toast.success("Data Delete")``
     } else {
       toast.error("Access Denied")
     }

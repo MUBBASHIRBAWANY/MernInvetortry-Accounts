@@ -9,7 +9,7 @@ import { updateDataFunction } from '../../../Api/CRUD Functions'
 
 const ProductEdit = () => {
     const { id } = useParams();
-    const pageName = "ProductEdit"
+    const pageName = "Edit SKU"
     const navigate = useNavigate()
     const [isLoading, setIsLoading] = useState(true);
     const [pRSku, setPRSku] = useState(null)

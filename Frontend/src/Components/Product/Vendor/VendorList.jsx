@@ -39,8 +39,8 @@ const VendorList = () => {
     setRows(list)
   }
 
-  const DeleteRight = "VenderDelete"
-  const pageName = "VenderList"
+  const DeleteRight = "Delete Vendor"
+  const pageName = "List Vendor"
   const UserRihts = useSelector((state) => state.UsersRights.UserRights)
   const checkAcess = async () => {
     const allowAcess = await UserRihts.find((item) => item == DeleteRight)

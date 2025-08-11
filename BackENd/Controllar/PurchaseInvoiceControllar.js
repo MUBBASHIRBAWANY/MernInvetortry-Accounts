@@ -17,6 +17,8 @@ export const createPurchaseInvoice = async (req, res) => {
             nextCode = nextNumber.toString().padStart(6, '0')
         }
 
+
+        
         const data = await PurchaseInvoiceModal.create({
             invoiceCode: nextCode,
             PurchaseInvoice: VendorCode + nextCode,
@@ -292,5 +294,7 @@ export const postPurchaseinvoice = async (req, res) => {
 
     }
 };
+
+
 
 

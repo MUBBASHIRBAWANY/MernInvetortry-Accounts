@@ -6,7 +6,6 @@ import AsyncSelect from 'react-select/async';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { createDataFunction, getDataFundtion, updateDataFunction } from '../../../../Api/CRUD Functions';
-import { rangeBetween } from '../../../Global/GenrateCode';
 import Select from 'react-select'
 
 
@@ -131,10 +130,7 @@ const JournalVoucherAdd = () => {
                 }
 
             }
-            if (value.value === debitAccount || value.value === creditAccount) {
-                toast.error("You cannot select the main account as a transaction account");
-                updatedRow.Account = "";
-            } else {
+            else {
                 updatedRow.Account = value.value;
                 updatedRow.Debit = 0;
                 updatedRow.Credit = 0;
@@ -174,15 +170,8 @@ const JournalVoucherAdd = () => {
     let TotalDebit = tableData.reduce((sum, row) => sum + (parseFloat(row.Debit) || 0), 0);
     let TotalCredit = tableData.reduce((sum, row) => sum + (parseFloat(row.Credit) || 0), 0);
     const onSubmit = async (data) => {
-        const value2 = TotalDebit - TotalCredit
-        console.log(value2)
-        if (value2 == 0) {
-            return toast.error("Credit and Debit Account Not Be Zero")
-        }
-        const findAccount = tableData.find((ac) => ac.Account == debitAccount)
-        if (findAccount) {
-            return toast.error("Main Account not Allow to select in table")
-        }
+        
+       
         
         data.VoucharData = tableData,
         data.status = "Post"
@@ -192,7 +181,7 @@ const JournalVoucherAdd = () => {
             data.VoucherNumber = `${voucherType}0000001`
         } else {
             let nextVoucherNumber = (parseInt(code[0].VoucherNumber.slice('2', "9"))) + 1
-            data.VoucherNumber = `CP${nextVoucherNumber.toString().padStart(7, '0')}`;
+            data.VoucherNumber = `${voucherType}${nextVoucherNumber.toString().padStart(7, '0')}`;
         }
         TotalDebit = tableData.reduce((sum, row) => sum + (parseFloat(row.Debit) || 0), 0);
         TotalCredit = tableData.reduce((sum, row) => sum + (parseFloat(row.Credit) || 0), 0);
@@ -214,10 +203,10 @@ const JournalVoucherAdd = () => {
             
             console.log(data)
             const res = await createDataFunction("/Voucher", data)
-
+            toast.success("data added successfully")
             console.log(res)
             setTimeout(() => {
-                navigate("/CashVoucher");
+                navigate("/JournalVoucherList");
             }, 1000);
         } catch (err) {
             if (err.status === 401) {
@@ -263,12 +252,8 @@ const JournalVoucherAdd = () => {
 
 
     const VoucherType = [{
-        value: "CP",
-        label: "CP Cash Payment Voucher",
-    },
-    {
-        value: "CR",
-        label: "CR Cash Recipt Voucher",
+        value: "Jv",
+        label: "Jv Journal Voucher",
     }
     ]
     return (

@@ -6,13 +6,18 @@ import Select from 'react-select';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { createDataFunction, deleteDataFunction, getDataFundtion, updateDataFunction } from '../../Api/CRUD Functions';
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, TextRun } from "docx";
+import { saveAs } from "file-saver";
 
 const PurchaseInvoiceView = () => {
     const navigate = useNavigate();
     const { id } = useParams();
     const [status, setStatus] = useState(false);
     const PurchaseInvoice = useSelector((state) => state.PurchaseInvoice.PurchaseInvoice);
-    const ChartofAccounts =  useSelector((state) => state.ChartofAccounts.ChartofAccounts);
+    const ChartofAccounts = useSelector((state) => state.ChartofAccounts.ChartofAccounts);
     const Vendor = useSelector((state) => state.Vendor.state);
     const Products = useSelector((state) => state.Product.product);
     const editInvoice = PurchaseInvoice.find((item) => item._id === id);
@@ -58,7 +63,7 @@ const PurchaseInvoiceView = () => {
     const AdvanceTax = tableData.reduce((sum, row) => sum + (parseFloat(row.AdvanceTax) || 0), 0)
     const AfterTaxdiscount = tableData.reduce((sum, row) => sum + (parseFloat(row.AfterTaxdiscount) || 0), 0)
     const totalNetAmount = tableData.reduce((sum, row) => sum + (parseFloat(row.netAmunt) || 0), 0);
-    const AccountCode = Vendor.find((item)=> item._id === editInvoice?.Vendor).AccountCode
+    const AccountCode = Vendor.find((item) => item._id === editInvoice?.Vendor).AccountCode
     console.log(AdvanceTax)
     const handlePostUnpost = async (action) => {
         console.log(action)
@@ -83,14 +88,10 @@ const PurchaseInvoiceView = () => {
                 Debit: totalGST,
                 store: editInvoice.Store,
             },
+
             {
-                Account: Admin.AdvanceTax,
-                Debit: AdvanceTax,
-                store: editInvoice.Store,
-            },
-            {
-                Account: ChartofAccounts.find((item)=> item.AccountCode === AccountCode)._id,
-                Credit: netAmuntWithAdvnaceTax ,
+                Account: ChartofAccounts.find((item) => item.AccountCode === AccountCode)._id,
+                Credit: netAmuntWithAdvnaceTax,
                 store: editInvoice.Store,
             },
 
@@ -127,6 +128,140 @@ const PurchaseInvoiceView = () => {
             toast.error(`Error ${action} invoice: ${error.message}`);
         }
     };
+    // Export to Excel
+  const exportToExcel = () => {
+    const headerInfo = [
+        { Field: "Invoice Number", Value: editInvoice?.PurchaseInvoice },
+        { Field: "Invoice Date", Value: new Date(editInvoice?.PurchaseInvoiceDate).toLocaleDateString('en-GB') },
+        { Field: "Vendor", Value: Vendor.find(v => v._id === editInvoice?.Vendor)?.VendorName },
+        { Field: "Sales Flow Ref", Value: editInvoice?.PurchaseInvoice }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(headerInfo);
+
+    XLSX.utils.sheet_add_json(
+        worksheet,
+        tableData.map(row => ({
+            Product: getProductName(row.product),
+            Unit: row.unit,
+            CTN: row.carton,
+            Box: row.box,
+            RetailValue: row.RetailValue,
+            GrossAmount: row.GrossAmount,
+            Discount: row.discount,
+            AfterDiscount: row.ValueAfterDiscout,
+            GST: row.Gst,
+            ValueWithGst: row.ValuewithGst,
+            AfterTaxDiscount: row.AfterTaxdiscount,
+            NetAmount: row.netAmunt
+        })),
+        { origin: "A6" } // Start table after header info
+    );
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "PurchaseInvoice");
+    XLSX.writeFile(workbook, `PurchaseInvoice_${editInvoice?.PurchaseInvoice}.xlsx`);
+};
+
+
+    // Export to PDF
+    const exportToPDF = () => {
+    const doc = new jsPDF();
+
+    // Header info
+    doc.setFontSize(14);
+    doc.text(`Purchase Invoice: ${editInvoice?.PurchaseInvoice}`, 14, 20);
+    doc.text(`Invoice Date: ${new Date(editInvoice?.PurchaseInvoiceDate).toLocaleDateString('en-GB')}`, 14, 28);
+    doc.text(`Vendor: ${Vendor.find(v => v._id === editInvoice?.Vendor)?.VendorName}`, 14, 36);
+    doc.text(`Sales Flow Ref: ${editInvoice?.PurchaseInvoice}`, 14, 44);
+
+    // Table
+    autoTable(doc, {
+        startY: 54,
+        head: [['Product', 'Unit', 'CTN', 'Box', 'Retail Value', 'Gross Amount', 'Discount', 'After Discount', 'GST', 'Value with GST', 'After Tax Discount', 'Net Amount']],
+        body: tableData.map(row => [
+            getProductName(row.product),
+            row.unit,
+            row.carton,
+            row.box,
+            row.RetailValue,
+            row.GrossAmount,
+            row.discount,
+            row.ValueAfterDiscout,
+            row.Gst,
+            row.ValuewithGst,
+            row.AfterTaxdiscount,
+            row.netAmunt
+        ])
+    });
+
+    doc.save(`PurchaseInvoice_${editInvoice?.PurchaseInvoice}.pdf`);
+};
+
+
+    // Export to Word
+   const exportToWord = async () => {
+    const headerRows = [
+        ["Invoice Number", editInvoice?.PurchaseInvoice],
+        ["Invoice Date", new Date(editInvoice?.PurchaseInvoiceDate).toLocaleDateString('en-GB')],
+        ["Vendor", Vendor.find(v => v._id === editInvoice?.Vendor)?.VendorName],
+        ["Sales Flow Ref", editInvoice?.PurchaseInvoice]
+    ].map(([label, value]) =>
+        new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph({ text: label, bold: true })] }),
+                new TableCell({ children: [new Paragraph(String(value ?? ''))] })
+            ]
+        })
+    );
+
+    const tableRows = [
+        new TableRow({
+            children: [
+                'Product','Unit','CTN','Box','Retail Value','Gross Amount','Discount','After Discount','GST','Value with GST','After Tax Discount','Net Amount'
+            ].map(h => new TableCell({ children: [new Paragraph({ text: h, bold: true })] }))
+        }),
+        ...tableData.map(row =>
+            new TableRow({
+                children: [
+                    getProductName(row.product),
+                    row.unit,
+                    row.carton,
+                    row.box,
+                    row.RetailValue,
+                    row.GrossAmount,
+                    row.discount,
+                    row.ValueAfterDiscout,
+                    row.Gst,
+                    row.ValuewithGst,
+                    row.AfterTaxdiscount,
+                    row.netAmunt
+                ].map(v => new TableCell({ children: [new Paragraph(String(v ?? ''))] }))
+            })
+        )
+    ];
+
+    const doc = new Document({
+        sections: [{
+            children: [
+                new Paragraph({ text: `Purchase Invoice - ${editInvoice?.PurchaseInvoice}`, heading: "Heading1" }),
+                new Table({ rows: headerRows, width: { size: 100, type: WidthType.PERCENTAGE } }),
+                new Paragraph({ text: "" }), // spacing
+                new Table({ rows: tableRows, width: { size: 100, type: WidthType.PERCENTAGE } })
+            ]
+        }]
+    });
+
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `PurchaseInvoice_${editInvoice?.PurchaseInvoice}.docx`);
+};
+
+
+    // Print Invoice
+    const printInvoice = () => {
+        window.print();
+    };
+
     console.log(voucherData)
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
@@ -162,12 +297,17 @@ const PurchaseInvoiceView = () => {
                                 </button>
                             </>
                         )}
+
                         <button
                             onClick={() => navigate('/PurchaseInvoiceList')}
                             className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
                         >
                             Back to List
                         </button>
+                        <button onClick={exportToExcel} className="px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800">Excel</button>
+                        <button onClick={exportToWord} className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Word</button>
+                        <button onClick={exportToPDF} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">PDF</button>
+                        <button onClick={printInvoice} className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">Print</button>
                     </div>
                 </div>
 

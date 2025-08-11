@@ -1,344 +1,420 @@
-import axios from 'axios';
-import React, { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form';
-import { useSelector } from 'react-redux';
-import { useNavigate, useParams } from 'react-router-dom';
-import { updateDate } from '../../Global/getDate';
-import { updateDataFunction } from '../../../Api/CRUD Functions';
-const UserRoleEdit = () => {
-    const { id } = useParams()
-    const pageName = "UserRoleEdit"
-    const navigate = useNavigate()
-    const [roles, setRoles] = useState([])
-    const loginuser = useSelector((state) => state.LoginerReducer.userDetail)
-    const UserRihts = useSelector((state) => state.UsersRights.UserRights)
-    const [sectionVisibility, setSectionVisibility] = useState({
-        vendor: false,
-        userRole: false,
-        category: false,
-      });
-      const toggleSection = (section) => {
-        setSectionVisibility((prev) => ({
-          ...prev,
-          [section]: !prev[section],
-        }));
-      };
-    const { register, handleSubmit, reset } = useForm({
-        defaultValues: {
-            roles: {}
-        }
-    })
-    const EditRole = useSelector((state) => state.UsersRole.state)
-    const checkAcess = async () => {
-        console.log(UserRihts)
-        const allowAcess = await UserRihts.find((item) => item == pageName)
-        console.log(allowAcess)
-        if (!allowAcess) {
-            navigate("/")
-        }
-    }
-    const getData = async () => {
-        const data = await EditRole.find((item) => item._id == id)
-        console.log(data.Roles)
-        setRoles(data?.Roles || [])
+import React, { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { useSelector } from "react-redux";
+import { toast, ToastContainer } from "react-toastify";
+import { updateDate } from "../../Global/getDate";
+import { createDataFunction, updateDataFunction } from "../../../Api/CRUD Functions";
+import { useNavigate, useParams } from "react-router-dom";
 
-        // Set form default values
-        reset({
-            RoleName: data?.RoleName || '',
-            roles: {
-                VenderAdd: data?.Roles?.includes('VenderAdd') || false,
-                VenderEdit: data?.Roles?.includes('VenderEdit') || false,
-                VenderList: data?.Roles?.includes('VenderList') || false,
-                VenderDelete: data?.Roles?.includes('VenderDelete') || false,
-                UserRoleAdd: data?.Roles?.includes('UserRoleAdd') || false,
-                UserRoleEdit: data?.Roles?.includes('UserRoleEdit') || false,
-                UserRoleList: data?.Roles?.includes('UserRoleList') || false,
-                UserRoleDelete: data?.Roles?.includes('UserRoleDelete') || false,
-                CategoryAdd: data?.Roles?.includes('CategoryAdd') || false,
-                CategoryEdit: data?.Roles?.includes('CategoryEdit') || false,
-                CategoryList: data?.Roles?.includes('CategoryList') || false,
-                CategoryDelete: data?.Roles?.includes('CategoryDelete') || false,
-                BrandAdd: data?.Roles?.includes('BrandAdd') || false,
-                BrandEdit: data?.Roles?.includes('BrandEdit') || false,
-                BrandList: data?.Roles?.includes('BrandList') || false,
-                BrandDelete: data?.Roles?.includes('BrandDelete') || false,
-                MasterSkuAdd: data?.Roles?.includes('MasterSkuAdd') || false,
-                MasterSkuEdit: data?.Roles?.includes('MasterSkuEdit') || false,
-                MasterSkuList: data?.Roles?.includes('MasterSkuList') || false,
-                MasterSkuDelete: data?.Roles?.includes('MasterSkuDelete') || false,
-                ProductAdd: data?.Roles?.includes('ProductAdd') || false,
-                ProductEdit: data?.Roles?.includes('ProductEdit') || false,
-                ProductList: data?.Roles?.includes('ProductList') || false,
-                ProductDelete: data?.Roles?.includes('ProductDelete') || false,
-                CustomerAdd: data?.Roles?.includes('CustomerAdd') || false,
-                CustomerEdit: data?.Roles?.includes('CustomerEdit') || false,
-                CustomerList: data?.Roles?.includes('CustomerList') || false,
-                CustomerDelete: data?.Roles?.includes('CustomerDelete') || false,
+// Updated TreeNode component with checked state
+const TreeNode = ({ node, onCheck, selectedRoles }) => {
+  const [expanded, setExpanded] = useState(false);
 
-                // Add other roles if needed
-            }
-        })
-    }
-
-
-
-    useEffect(() => {
-        checkAcess()
-        getData()
-    }, [id, EditRole])
-
-    const onSubmit = async (data) => {
-
-        const selectedRoles = Object.keys(data.roles).filter(
-            (key) => data.roles[key]
-        );
-        data.Roles = selectedRoles
-        data.updatedBy = loginuser.firstname
-        data.updateDate = updateDate()
-        try {
-            const res = await updateDataFunction(`/userRole/rolesUpdaate/${id}`, data)
-
-            navigate('/UserRolls')
-
-        } catch (err) {
-            console.log(err)
-        }
-
-    }
-
-    return (
+  return (
+    <div className="ml-4">
+      {node.children ? (
         <div>
-            <form
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-white p-6 rounded-lg shadow-md mb-6"
-                onSubmit={handleSubmit(onSubmit)}
-            >
-                {/* Role Name Field */}
-                <div className="col-span-1 md:col-span-2 lg:col-span-3">
-                    <label className="block text-gray-700 font-semibold mb-2">Role Name</label>
-                    <input
-                        type="text"
-                        {...register("RoleName")}
-                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                    />
-                </div>
-
-                <div className="col-span-1 md:col-span-2 lg:col-span-3">
-                    <button
-                        type="button"
-                        onClick={() => toggleSection("vendor")}
-                        className="w-full flex justify-between items-center text-left text-lg font-bold text-gray-800 mb-2 focus:outline-none"
-                    >
-                        Vendor Permissions
-                        <span>{sectionVisibility.vendor ? "▲" : "▼"}</span>
-                    </button>
-
-                    <div
-                        className={`transition-max-height duration-500 ease-in-out ${sectionVisibility.vendor ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-                            }`}
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 py-2">
-                            <label className="flex items-center space-x-2">
-                                <input
-                                    type="checkbox"
-                                    {...register("roles.VenderAdd")}
-                                    className="form-checkbox h-5 w-5 text-blue-600"
-                                />
-                                <span className="text-gray-700">Vendor Add</span>
-                            </label>
-                            <label className="flex items-center space-x-2">
-                                <input
-                                    type="checkbox"
-                                    {...register("roles.VenderEdit")}
-                                    className="form-checkbox h-5 w-5 text-blue-600"
-                                />
-                                <span className="text-gray-700">Vendor Edit</span>
-                            </label>
-                            <label className="flex items-center space-x-2">
-                                <input
-                                    type="checkbox"
-                                    {...register("roles.VenderList")}
-                                    className="form-checkbox h-5 w-5 text-blue-600"
-                                />
-                                <span className="text-gray-700">Vendor View</span>
-                            </label>
-                            <label className="flex items-center space-x-2">
-                                <input
-                                    type="checkbox"
-                                    {...register("roles.VenderDelete")}
-                                    className="form-checkbox h-5 w-5 text-blue-600"
-                                />
-                                <span className="text-gray-700">Vendor Delete</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-
-                {/* User Role */}
-                <div className="col-span-1 md:col-span-2 lg:col-span-3">
-                    <button
-                        type="button"
-                        onClick={() => toggleSection("userRole")}
-                        className="w-full flex justify-between items-center text-left text-lg font-bold text-gray-800 mb-2"
-                    >
-                        User Role
-                        <span>{sectionVisibility.userRole ? "▲" : "▼"}</span>
-                    </button>
-                    <div
-                        className={`transition-max-height ${sectionVisibility.userRole ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-                            }`}
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 py-2">
-                            {/* Checkboxes */}
-                            {/* ... repeat for other permissions */}
-                            {["UserRoleAdd", "UserRoleEdit", "UserRoleList", "UserRoleDelete"].map((perm) => (
-                                <label key={perm} className="flex items-center space-x-2">
-                                    <input type="checkbox" {...register(`roles.${perm}`)} className="form-checkbox h-5 w-5 text-blue-600" />
-                                    <span className="text-gray-700">{perm.replace("UserRole", "User Role ")}</span>
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Category */}
-                <div className="col-span-1 md:col-span-2 lg:col-span-3">
-                    <button
-                        type="button"
-                        onClick={() => toggleSection("category")}
-                        className="w-full flex justify-between items-center text-left text-lg font-bold text-gray-800 mb-2"
-                    >
-                        Category
-                        <span>{sectionVisibility.category ? "▲" : "▼"}</span>
-                    </button>
-                    <div
-                        className={`transition-max-height ${sectionVisibility.category ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-                            }`}
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 py-2">
-                            {["CategoryAdd", "CategoryEdit", "CategoryList", "CategoryDelete"].map((perm) => (
-                                <label key={perm} className="flex items-center space-x-2">
-                                    <input type="checkbox" {...register(`roles.${perm}`)} className="form-checkbox h-5 w-5 text-blue-600" />
-                                    <span className="text-gray-700">{perm.replace("Category", "Category ")}</span>
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Brand */}
-                <div className="col-span-1 md:col-span-2 lg:col-span-3">
-                    <button
-                        type="button"
-                        onClick={() => toggleSection("brand")}
-                        className="w-full flex justify-between items-center text-left text-lg font-bold text-gray-800 mb-2"
-                    >
-                        Brand
-                        <span>{sectionVisibility.brand ? "▲" : "▼"}</span>
-                    </button>
-                    <div
-                        className={`transition-max-height ${sectionVisibility.brand ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-                            }`}
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 py-2">
-                            {["BrandAdd", "BrandEdit", "BrandList", "BrandDelete"].map((perm) => (
-                                <label key={perm} className="flex items-center space-x-2">
-                                    <input type="checkbox" {...register(`roles.${perm}`)} className="form-checkbox h-5 w-5 text-blue-600" />
-                                    <span className="text-gray-700">{perm.replace("Brand", "Brand ")}</span>
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Master Sku */}
-                <div className="col-span-1 md:col-span-2 lg:col-span-3">
-                    <button
-                        type="button"
-                        onClick={() => toggleSection("masterSku")}
-                        className="w-full flex justify-between items-center text-left text-lg font-bold text-gray-800 mb-2"
-                    >
-                        Master Sku
-                        <span>{sectionVisibility.masterSku ? "▲" : "▼"}</span>
-                    </button>
-                    <div
-                        className={`transition-max-height ${sectionVisibility.masterSku ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-                            }`}
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 py-2">
-                            {["MasterSkuAdd", "MasterSkuEdit", "MasterSkuList", "MasterSkuDelete"].map((perm) => (
-                                <label key={perm} className="flex items-center space-x-2">
-                                    <input type="checkbox" {...register(`roles.${perm}`)} className="form-checkbox h-5 w-5 text-blue-600" />
-                                    <span className="text-gray-700">{perm.replace("MasterSku", "MasterSku ")}</span>
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Product */}
-                <div className="col-span-1 md:col-span-2 lg:col-span-3">
-                    <button
-                        type="button"
-                        onClick={() => toggleSection("product")}
-                        className="w-full flex justify-between items-center text-left text-lg font-bold text-gray-800 mb-2"
-                    >
-                        Product
-                        <span>{sectionVisibility.product ? "▲" : "▼"}</span>
-                    </button>
-                    <div
-                        className={`transition-max-height ${sectionVisibility.product ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-                            }`}
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 py-2">
-                            {["ProductAdd", "ProductEdit", "ProductList", "ProductDelete"].map((perm) => (
-                                <label key={perm} className="flex items-center space-x-2">
-                                    <input type="checkbox" {...register(`roles.${perm}`)} className="form-checkbox h-5 w-5 text-blue-600" />
-                                    <span className="text-gray-700">{perm.replace("Product", "Product ")}</span>
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Customer */}
-                <div className="col-span-1 md:col-span-2 lg:col-span-3">
-                    <button
-                        type="button"
-                        onClick={() => toggleSection("customer")}
-                        className="w-full flex justify-between items-center text-left text-lg font-bold text-gray-800 mb-2"
-                    >
-                        Customer
-                        <span>{sectionVisibility.customer ? "▲" : "▼"}</span>
-                    </button>
-                    <div
-                        className={`transition-max-height ${sectionVisibility.customer ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-                            }`}
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 py-2">
-                            {["CustomerAdd", "CustomerEdit", "CustomerList", "CustomerDelete"].map((perm) => (
-                                <label key={perm} className="flex items-center space-x-2">
-                                    <input type="checkbox" {...register(`roles.${perm}`)} className="form-checkbox h-5 w-5 text-blue-600" />
-                                    <span className="text-gray-700">{perm.replace("Customer", "Customer ")}</span>
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Submit Button */}
-                <div className="col-span-1 md:col-span-2 lg:col-span-3 flex justify-end mt-4">
-                    <button
-                        type="submit"
-                        className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                        Add Role
-                    </button>
-                </div>
-            </form>
+          <button
+            type="button"
+            onClick={() => setExpanded(!expanded)}
+            className="flex items-center mb-1"
+          >
+            <span className="mr-2">{expanded ? "-" : "+"}</span>
+            <span className="font-semibold">{node.label}</span>
+          </button>
+          {expanded && (
+            <div className="ml-6 border-l pl-4">
+              {node.children.map((child) => (
+                <TreeNode 
+                  key={child.id} 
+                  node={child} 
+                  onCheck={onCheck} 
+                  selectedRoles={selectedRoles}
+                />
+              ))}
+            </div>
+          )}
         </div>
-    )
-}
+      ) : (
+        <label className="flex items-center space-x-2 mb-1">
+          <input
+            type="checkbox"
+            checked={selectedRoles.includes(node.label)}
+            onChange={(e) => onCheck(node.label, e.target.checked)}
+            className="form-checkbox h-4 w-4 text-blue-500"
+          />
+          <span>{node.label}</span>
+        </label>
+      )}
+    </div>
+  );
+};
 
-export default UserRoleEdit
+export default function UserRoleAddTree() {
+  const { register, handleSubmit, reset } = useForm();
+  const [selectedRoles, setSelectedRoles] = useState([]);
+  const loginuser = useSelector((state) => state.LoginerReducer.userDetail);
+  const EditRole = useSelector((state) => state.UsersRole.state);
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  const handleCheck = (label, checked) => {
+    setSelectedRoles((prev) =>
+      checked ? [...prev, label] : prev.filter((item) => item !== label)
+    );
+  };
+
+  const getData = async () => {
+    const data = EditRole.find((item) => item._id === id);
+    if (data) {
+      setSelectedRoles(data.Roles || []);
+      reset({
+        RoleName: data.RoleName || '',
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (id) {
+      getData();
+    }
+  }, [id, EditRole]);
+
+   const treeData = [
+    {
+      id: "setup",
+      label: "Setup",
+      children: [
+        {
+          id: "userSetup",
+          label: "User Setup",
+          children: [
+            {
+              id: "userRole",
+              label: "User Role",
+              children: [
+                { id: "AddUserRole", label: "Add User Role" },
+                { id: "editUserRole", label: "Edit User Role" },
+                { id: "DeleteUserRole", label: "Delete User Role" },
+                { id: "ListUserRole", label: "List User Role" }
+              ]
+            },
+            {
+              id: "Location",
+              label: "Location",
+              children: [
+                { id: "AddLocation", label: "Add Location" },
+                { id: "editLocation", label: "Edit Location" },
+                { id: "DeleteLocation", label: "Delete Location" },
+                { id: "ListLocation", label: "List Location" }
+              ]
+            },
+            {
+              id: "Store",
+              label: "Store",
+              children: [
+                { id: "AddStore", label: "Add Store" },
+                { id: "editStore", label: "Edit Store" },
+                { id: "DeleteStore", label: "Delete Store" },
+                { id: "ListStore", label: "List Store" }
+              ]
+            }
+          ]
+        },
+        {
+          id: "AccountsSetup",
+          label: "Accounts Setup",
+          children: [
+            {
+              id: "ChartAccounts",
+              label: "Chart of Accounts",
+              children: [
+                { id: "AddChart", label: "Add Chart of Accounts" },
+                { id: "editChart", label: "Edit Chart of Accounts" },
+                { id: "DeleteChart", label: "Delete Chart of Accounts" },
+                { id: "ListChart", label: "List Chart of Accounts" },
+                { id: "ChartTree", label: "Chart of Accounts Tree View" }
+              ]
+            }
+          ]
+        },
+        {
+          id: "ProductSetup",
+          label: "Product Setup",
+          children: [
+            {
+              id: "Vendor",
+              label: "Vendor",
+              children: [
+                { id: "AddVendor", label: "Add Vendor" },
+                { id: "editVendor", label: "Edit Vendor" },
+                { id: "DeleteVendor", label: "Delete Vendor" },
+                { id: "ListVendor", label: "List Vendor" }
+              ]
+            },
+            {
+              id: "SKU",
+              label: "SKU",
+              children: [
+                { id: "AddSKU", label: "Add SKU" },
+                { id: "editSKU", label: "Edit SKU" },
+                { id: "DeleteSKU", label: "Delete SKU" },
+                { id: "ListSKU", label: "List SKU" }
+              ]
+            }
+
+          ]
+        },
+        {
+          id: "CustomerSetup",
+          label: "Customer Setup",
+          children: [
+            {
+              id: "Customer",
+              label: "Customer",
+              children: [
+                { id: "AddCustomer", label: "Add Customer" },
+                { id: "editCustomer", label: "Edit Customer" },
+                { id: "DeleteCustomer", label: "Delete Customer" },
+                { id: "ListCustomer", label: "List Customer" }
+              ]
+            },
+            {
+              id: "Zone",
+              label: "Zone",
+              children: [
+                { id: "AddZone", label: "Add Zone" },
+                { id: "editZone", label: "Edit Zone" },
+                { id: "DeleteZone", label: "Delete Zone" },
+                { id: "ListZone", label: "List Zone" }
+              ]
+            },
+            {
+              id: "Region",
+              label: "Region",
+              children: [
+                { id: "AddRegion", label: "Add Region" },
+                { id: "editRegion", label: "Edit Region" },
+                { id: "DeleteRegion", label: "Delete Region" },
+                { id: "ListRegion", label: "List Region" }
+              ]
+            },
+            {
+              id: "City",
+              label: "City",
+              children: [
+                { id: "AddCity", label: "Add City" },
+                { id: "editCity", label: "Edit City" },
+                { id: "DeleteCity", label: "Delete City" },
+                { id: "ListCity", label: "List City" }
+              ]
+            },
+            {
+              id: "Order Booker",
+              label: "Order Booker",
+              children: [
+                { id: "AddOrder Booker", label: "Add Order Booker" },
+                { id: "editOrder Booker", label: "Edit Order Booker" },
+                { id: "DeleteOrder Booker", label: "Delete Order Booker" },
+                { id: "ListOrder Booker", label: "List Order Booker" }
+              ]
+            },
+          ]
+        },
+         {
+          id: "Opening Balance",
+          label: "Opening Setup",
+          children: [
+            {
+              id: "OpeningBalance",
+              label: "OpeningBalance",
+              children: [
+                { id: "AddOpeningBalance", label: "Add Opening Balance" },
+                { id: "editOpeningBalance", label: "Edit Opening Balance" },
+                { id: "DeleteOpeningBalance", label: "Delete Opening Balance" },
+                { id: "ListOpeningBalance", label: "List Opening Balance" }
+              ]
+            },
+            {
+              id: "Account Opening",
+              label: "Account Opening",
+              children: [
+                { id: "AddAccountOpening", label: "Add Account Opening" },
+                { id: "editAccountOpening", label: "Edit Account Opening" },
+                { id: "DeleteAccountOpening", label: "Delete Account Opening" },
+                { id: "ListAccountOpening", label: "List Account Opening " }
+              ]
+            }
+
+          ]
+        },
+      ]
+    },
+     {
+      id: "Transaction",
+      label: "Transaction",
+      children: [
+        {
+          id: "Inventory Transaction",
+          label: "Inventory Transaction",
+          children: [
+            {
+              id: "Purchase",
+              label: "Purchase",
+              children: [
+                { id: "AddPurchase", label: "Add Purchase" },
+                { id: "editPurchase", label: "Edit Purchase" },
+                { id: "DeletePurchase", label: "Delete Purchase" },
+                { id: "ListPurchase", label: "List Purchase" },
+                { id: "ViewPurchase", label: "View Purchase" },
+              ]
+            },
+            {
+              id: " SalesOrder",
+              label: " SalesOrder",
+              children: [
+                { id: "Add SalesOrder", label: "Add Sales Order" },
+                { id: "edit SalesOrder", label: "Edit Sales Order" },
+                { id: "Delete SalesOrder", label: "Delete Sales Order" },
+                { id: "List SalesOrder", label: "List Sales Order" },
+                { id: "View SalesOrder", label: "View Sales Order" },
+              ]
+            },
+          {
+              id: "SalesOrderDc",
+              label: "Sales Order Dc",
+              children: [
+                { id: "Add SalesOrderDc", label: "Add Sales Order Dc" },
+                { id: "edit SalesOrderDc", label: "Edit Sales Order Dc" },
+                { id: "Delete SalesOrderDc", label: "Delete Sales Order Dc" },
+                { id: "List SalesOrderDc", label: "List Sales Order Dc" },
+                { id: "View SalesOrderDc", label: "View Sales Order Dc" },
+              ]
+            },
+            {
+              id: "SalesInvoice",
+              label: "Sales Invoice",
+              children: [
+                { id: "Add SalesInvoice", label: "Add Sales Invoice" },
+                { id: "edit SalesInvoice", label: "Edit Sales Invoice" },
+                { id: "Delete SalesInvoice", label: "Delete Sales Invoice" },
+                { id: "List SalesInvoice", label: "List Sales Invoice" },
+                { id: "View SalesInvoice", label: "View Sales Invoice" },
+              ]
+            },
+          ]
+        },
+       {
+          id: "Voucher Transaction",
+          label: "Voucher Transaction",
+          children: [
+            {
+              id: "CashBook",
+              label: "CashBook",
+              children: [
+                { id: "AddCashBook", label: "Add Cash Book" },
+                { id: "editCashBook", label: "Edit Cash Book" },
+                { id: "DeleteCashBook", label: "Delete Cash Book" },
+                { id: "ListCashBook", label: "List Cash Book" },
+                { id: "ViewCashBook", label: "View Cash Book" },
+              ]
+            },
+            {
+              id: "BankBook",
+              label: "Bank Book",
+              children: [
+                { id: "AddBankBook", label: "Add Bank Book" },
+                { id: "editBankBook", label: "Edit Bank Book" },
+                { id: "DeleteBankBook", label: "Delete Bank Book" },
+                { id: "ListBankBook", label: "List Bank Book" },
+                { id: "ViewBankBook", label: "View Bank Book" },
+              ]
+            },
+          {
+              id: "JournalVoucher",
+              label: "Journal Voucher",
+              children: [
+                { id: "AddJournalVoucher", label: "Add Journal Voucher" },
+                { id: "editJournalVoucher", label: "Edit Journal Voucher" },
+                { id: "DeleteJournalVoucher", label: "Delete Journal Voucher" },
+                { id: "ListJournalVoucher", label: "List Journal Voucher" },
+                { id: "ViewJournalVoucher", label: "View Journal Voucher" },
+              ]
+            },
+           
+          ]
+        },
+        
+      ]
+    }
+  ];
+  const UserRihts = useSelector((state) => state.UsersRights.UserRights)
+  const pageName = "Edit User Role"
+  const checkAcess = async () => {
+    const allowAcess = await UserRihts.find((item) => item == pageName)
+    console.log(allowAcess)
+    if (!allowAcess) {
+      navigate("/")
+    }
+  }
+
+  useEffect(() => {
+    checkAcess()
+  }, [])
+  const onSubmit = async (data) => {
+    const roleData = {
+      RoleName: data.RoleName,
+      Roles: selectedRoles,
+      createdBy: loginuser.firstname,
+      createDate: updateDate()
+    };
+
+    try {
+      await updateDataFunction(`/userRole/rolesUpdaate/${id}`, roleData);
+      toast.success("Role saved successfully");
+      setTimeout(() => {
+        navigate('/UserRolls');
+      }, 2000);
+    } catch (err) {
+      toast.error("Something went wrong");
+      console.error("Submission error:", err);
+    }
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="bg-white p-6 rounded-lg shadow-md"
+    >
+      <div className="mb-8">
+        <ToastContainer />
+        <label className="block text-gray-700 font-semibold mb-2">
+          Role Name
+        </label>
+        <input
+          type="text"
+          {...register("RoleName", { required: true })}
+          className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div className="space-y-2">
+        {treeData.map((node) => (
+          <TreeNode 
+            key={node.id} 
+            node={node} 
+            onCheck={handleCheck} 
+            selectedRoles={selectedRoles}
+          />
+        ))}
+      </div>
+
+      <button
+        type="submit"
+        className="mt-6 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+      >
+        Save Role
+      </button>
+    </form>
+  );
+}

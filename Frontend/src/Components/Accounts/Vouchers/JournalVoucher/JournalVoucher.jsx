@@ -45,7 +45,7 @@ const JournalVoucherList = () => {
                 dispatch(fetchVendor(vendor.data))
                 dispatch(fetchAdminReducer(Admmin.data))
                 dispatch(fetchChartofAccounts(accounts.data))
-                setRows(data || []);
+                setRows(data.data || []);
                 dispatch(fetchVoucher(data.data || []));
 
 
@@ -101,13 +101,7 @@ const JournalVoucherList = () => {
         { field: 'VoucherDate', headerName: 'Date Start', width: 150, renderCell: (params) => formatDate(params.value) },
         { field: 'VoucherType', headerName: 'Voucher Type', width: 150, },
         {
-            field: 'VoucherNumber', headerName: 'Voucher Number', width: 150, renderCell: (params) => (
-                <span style={{ color: `#1976d2`, textDecoration: 'underline', cursor: "pointer" }}
-                    onClick={() => navigate((`/BankPaymentVoucherView/${params.row._id}`))}
-                >
-                    {params.value}
-                </span>
-            )
+            field: 'VoucherNumber', headerName: 'Voucher Number', width: 150, 
         },
       
         { field: 'status', headerName: 'Status', width: 150, },

@@ -4,7 +4,7 @@ import { generateNextCodeForCat } from '../../Global/GenrateCode';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { createDataFunction, getDataFundtion } from '../../../Api/CRUD Functions';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Select from 'react-select'
 
 
@@ -42,6 +42,19 @@ const StoreAdd = () => {
 
         }
     }
+     const UserRihts = useSelector((state) => state.UsersRights.UserRights)
+      const pageName = "Add Store"
+      const checkAcess = async () => {
+        const allowAcess = await UserRihts.find((item) => item == pageName)
+        console.log(allowAcess)
+        if (!allowAcess) {
+          navigate("/")
+        }
+      }
+    
+      useEffect(() => {
+        checkAcess()
+      }, [])
     return (
         <div>
             <div>
@@ -67,7 +80,7 @@ const StoreAdd = () => {
                                 type="submit"
                                 className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
-                                Edit Store
+                                Add Store
                             </button>
                         </div>
                     </form>

@@ -1,11 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 
 const ChartofAccountsTreeView = () => {
   const accounts = useSelector((state) => state.ChartofAccounts.ChartofAccounts);
   const [treeData, setTreeData] = useState([]);
+const navigate = useNavigate()
+  const UserRihts = useSelector((state) => state.UsersRights.UserRights)
+  const pageName = "Chart of Accounts Tree View1"
+  const checkAcess = async () => {
+    const allowAcess = await UserRihts.find((item) => item == pageName)
+    console.log(allowAcess)
+    if (!allowAcess) {
+      navigate("/")
+    }
+  }
 
+  
   useEffect(() => {
+    checkAcess()
     if (accounts?.length) {
       setTreeData(buildTree(accounts));
     }
@@ -28,7 +41,7 @@ const ChartofAccountsTreeView = () => {
       } else {
         const parentKey = `Stage${stage - 1}`;
         const parentId = item[parentKey];
-        
+
         if (parentId && map[parentId]) {
           map[parentId].children.push(map[item._id]);
         }
@@ -56,9 +69,9 @@ const ChartofAccountsTreeView = () => {
           ) : (
             <span className="mr-2 w-6 inline-block">•</span>
           )}
-          
+
           <div className="flex-1">
-            <span 
+            <span
               className="text-gray-800 font-medium hover:text-blue-700 cursor-pointer text-base"
               onClick={() => hasChildren && setExpanded(!expanded)}
             >
@@ -66,13 +79,17 @@ const ChartofAccountsTreeView = () => {
               <span className="text-gray-500 text-sm ml-2 font-normal">
                 ({node.AccountCode})
               </span>
+
             </span>
-            
+
             {expanded && hasChildren && (
               <ul className="mt-2 ml-2 pl-4 border-l-2 border-gray-200">
                 {node.children.map(child => (
                   <TreeNode key={child._id} node={child} />
+
                 ))}
+
+
               </ul>
             )}
           </div>
@@ -99,7 +116,7 @@ const ChartofAccountsTreeView = () => {
               Account Tree View
             </h2>
           </div>
-          
+
           <div className="p-6 max-h-[70vh] overflow-y-auto">
             {treeData.length === 0 ? (
               <div className="text-center py-8 text-gray-500">

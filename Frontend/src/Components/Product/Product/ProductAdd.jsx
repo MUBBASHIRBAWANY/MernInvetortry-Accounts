@@ -10,7 +10,7 @@ import { createDataFunction, getDataFundtion } from '../../../Api/CRUD Functions
 
 
 const ProductAdd = () => {
-    const pageName = "ProductAdd"
+    const pageName = "Add SKU"
     const MasterSku = useSelector((state) => state.MasterSku.MasterSku)
     const Vendor = useSelector((state) => state.Vendor.state)
     const Brand = useSelector((state) => state.Brand.brand)

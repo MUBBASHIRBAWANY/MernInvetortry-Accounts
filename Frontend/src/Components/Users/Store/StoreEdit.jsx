@@ -17,6 +17,20 @@ const StoreEdit = () => {
         return { value: item._id, label: item.LocationName }
     })
 
+     const UserRihts = useSelector((state) => state.UsersRights.UserRights)
+      const pageName = "Edit Store"
+      const checkAcess = async () => {
+        const allowAcess = await UserRihts.find((item) => item == pageName)
+        console.log(allowAcess)
+        if (!allowAcess) {
+          navigate("/")
+        }
+      }
+    
+      useEffect(() => {
+        checkAcess()
+      }, [])
+
     const defaultLocation = useMemo(() => {
         if (!editLocation || !editLocation.Location) return null;
         const found = location.find(item => item._id === editLocation.Location);

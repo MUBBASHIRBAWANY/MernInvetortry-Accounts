@@ -31,6 +31,20 @@ const LocationAdd = () => {
 
     }
   }
+
+  const UserRihts = useSelector((state) => state.UsersRights.UserRights)
+  const pageName = "Add Location"
+  const checkAcess = async () => {
+    const allowAcess = await UserRihts.find((item) => item == pageName)
+    console.log(allowAcess)
+    if (!allowAcess) {
+      navigate("/")
+    }
+  }
+
+  useEffect(() => {
+    checkAcess()
+  }, [])
   return (
     <div>
           <div>

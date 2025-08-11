@@ -6,7 +6,7 @@ import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogTitle from '@mui/material/DialogTitle';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { fetchLocation } from '../../../Redux/Reducers/LocationReducer';
 import { useNavigate } from 'react-router-dom';
 import { deleteDataFunction, getDataFundtion } from '../../../Api/CRUD Functions';
@@ -18,6 +18,8 @@ const LocationList = () => {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const navigate = useNavigate()
+  const [deleteR, setdeleteR] = useState(false)
+
 
   const getData = async () => {
     const data = await getDataFundtion("/Location")
@@ -25,7 +27,25 @@ const LocationList = () => {
     dispatch(fetchLocation(list))
     setRows(list)
   }
+
+  const DeleteRight = "Delete Location"
+  const pageName = "List Location"
+  const UserRihts = useSelector((state) => state.UsersRights.UserRights)
+
+  const checkAcess = async () => {
+    const allowAcess = await UserRihts.find((item) => item == DeleteRight)
+    console.log(allowAcess)
+    if (allowAcess) {
+      setdeleteR(true)
+    }
+    const viweAcess = await UserRihts.find((item) => item == pageName)
+    console.log(viweAcess)
+    if (!viweAcess) {
+      navigate("/")
+    }
+  }
   useEffect(() => {
+    checkAcess()
     getData()
   }, [])
 
@@ -37,7 +57,7 @@ const LocationList = () => {
   const handleDeleteClick = async (id) => {
     setSelectedId(id);
     const isDeleteable = await getDataFundtion(`/Store/getStoreByLocation/${id}`);
-    if(isDeleteable.data.length > 0) {
+    if (isDeleteable.data.length > 0) {
       return toast.error("This Location is in use by Store, You can't delete it");
     }
     else {
@@ -45,10 +65,18 @@ const LocationList = () => {
     }
   };
 
-  const handleConfirmDelete = () => {
-    setRows(rows.filter((row) => row._id !== selectedId));
+  const handleConfirmDelete = async () => {    
     setOpenDeleteDialog(false);
-    deleteDataFunction(`/Location/deletelocation/${selectedId}`)
+    console.log(deleteR)
+    if (deleteR) {
+      setRows(rows.filter((row) => row._id !== selectedId));
+    await deleteDataFunction(`/Location/deletelocation/${selectedId}`)
+            toast.success("Data Delete")
+    
+    }else{
+      toast.error("Access Denied")
+
+    }
   };
 
   const columns = [

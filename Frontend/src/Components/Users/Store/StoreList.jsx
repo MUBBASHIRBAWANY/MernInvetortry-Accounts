@@ -18,19 +18,36 @@ const StoreList = () => {
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [selectedId, setSelectedId] = useState(null);
     let Loction = useSelector((state) => state.Location.Location)
-
     const navigate = useNavigate()
+    const [deleteR, setdeleteR] = useState(false)
+    const DeleteRight = "Delete Store"
+    const pageName = "List Store"
+    const UserRihts = useSelector((state) => state.UsersRights.UserRights)
+    const checkAcess = async () => {
+        const allowAcess = await UserRihts.find((item) => item == DeleteRight)
+        console.log(allowAcess)
+        if (allowAcess) {
+            setdeleteR(true)
+        }
+        const viweAcess = await UserRihts.find((item) => item == pageName)
+        if (!viweAcess) {
+            navigate("/")
+        }
+    }
+
 
     const getData = async () => {
         const data = await getDataFundtion("/Store")
         const Location = await getDataFundtion("/Location")
-        
+
         const list = data.data
         dispatch(fetchStore(list))
         dispatch(fetchLocation(Location.data))
         setRows(list)
     }
+
     useEffect(() => {
+        checkAcess()
         getData()
     }, [])
 
@@ -44,13 +61,21 @@ const StoreList = () => {
         setOpenDeleteDialog(true);
     };
 
+
     const handleConfirmDelete = async () => {
-        try{
-            await deleteDataFunction(`/Store/deleteStore/${selectedId}`)
-            setRows(rows.filter((row) => row._id !== selectedId));
-            setOpenDeleteDialog(false);
+
+        try {
+            if (deleteR) {
+                setRows(rows.filter((row) => row._id !== selectedId));
+                await deleteDataFunction(`/Store/deleteStore/${selectedId}`)
+                setRows(rows.filter((row) => row._id !== selectedId));
+                setOpenDeleteDialog(false);
+            } else {
+                toast.error("Access Denied")
+
+            }
         }
-        catch(err){
+        catch (err) {
             toast.error(err.response.data)
         }
     };
@@ -88,7 +113,7 @@ const StoreList = () => {
     return (
 
         <div style={{ margin: 20, height: "70%", width: '90%' }}>
-        <ToastContainer />
+            <ToastContainer />
             <DataGrid
                 rows={rows}
                 columns={columns}

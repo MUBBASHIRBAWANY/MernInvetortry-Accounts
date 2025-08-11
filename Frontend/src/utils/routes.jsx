@@ -157,6 +157,7 @@ import CashVoucherListPage from "../Pages/Accounts/Voucher/CashVoucher/CashVouch
 import CashVoucherAddPage from "../Pages/Accounts/Voucher/CashVoucher/CashVoucherAddPage"
 import CashVoucherEditPage from "../Pages/Accounts/Voucher/CashVoucher/CashVoucherEditPage"
 import JournalVoucherListPage from "../Pages/Accounts/Voucher/JournalVoucher/JournalVoucherListPage"
+import JournalVoucherAddPage from "../Pages/Accounts/Voucher/JournalVoucher/JournalVoucherAddPage"
 
 
 
@@ -794,6 +795,10 @@ const routes = [
        {
         path: "/JournalVoucherList",
         component: <JournalVoucherListPage />
+    },
+    {
+        path: "/JournalVoucherAdd",
+        component: <JournalVoucherAddPage />
     }
 
 ]

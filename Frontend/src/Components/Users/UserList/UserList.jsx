@@ -42,6 +42,7 @@ const userlist = () => {
     dispatch(fetchUsers(list))
     setRows(list)
   }
+
   useEffect(() => {
     getData()
   }, [])
@@ -82,7 +83,7 @@ const userlist = () => {
         return Location ? Location.LocationName : 'No Location Assigned';
       }
     },
-       {
+    {
       field: 'Store', headerName: 'Store', width: 150, renderCell: (params) => {
         const Store = store.find(Loction => Loction._id == params.formattedValue);
         return Store ? Store.StoreName : 'No Store Assigned';
