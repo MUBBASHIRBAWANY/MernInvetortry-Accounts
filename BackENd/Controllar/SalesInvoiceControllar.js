@@ -476,7 +476,7 @@ export const getOnlyRemain = async (req, res) => {
 export const getInvoiceByClient = async (req , res) => {
     const {Client} = req.params
     try {
-        const data = await SalesInvoiceModal.find({Client : Client , RemainingAmount: { $ne: 0, $exists: true }})
+        const data = await SalesInvoiceModal.find({Client : Client , RemainingAmount: { $ne: 0, $exists: true } , PostStatus : true})
         console.log(data)
         res.status(200).send({ status: true, data });
     } catch (err) {

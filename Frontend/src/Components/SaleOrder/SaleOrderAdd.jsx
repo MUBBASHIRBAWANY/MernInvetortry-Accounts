@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -8,12 +8,15 @@ import { createDataFunction, getDataFundtion } from '../../Api/CRUD Functions';
 import AsyncSelect from 'react-select/async';
 import Select from 'react-select'
 import { generateNextCode, generateNextCodeForOrder } from '../Global/GenrateCode';
+import { fetchSaleOrder } from '../../Redux/Reducers/SaleOrderReducer';
 
 
 
 const SaleOrderAdd = () => {
     const navigate = useNavigate();
     const [poClient, setPoClient] = useState(null);
+    const [lginerStore, setlginerStore] = useState([])
+    const [lginerlocation, setlginerlocation] = useState([])
     const [filterClinet, setFilterClinet] = useState([])
     const Client = useSelector((state) => state.Client.client)
     const Products = useSelector((state) => state.Product.product);
@@ -29,6 +32,8 @@ const SaleOrderAdd = () => {
     const [salesStore, setSalesStore] = useState([])
     const [storeDrp, setStoreDrp] = useState([])
     const OrderBooker = useSelector((state) => state.OrderBooker.OrderBooker)
+const dispatch = useDispatch()
+
 
     const Location = location.filter(item => loginVendor.Location.includes(item._id))
         .map((item) => ({
@@ -36,7 +41,7 @@ const SaleOrderAdd = () => {
             value: item._id
         }))
 
-    const { register, handleSubmit, formState: { errors } } = useForm();
+    const { register, handleSubmit, formState: { errors }, reset } = useForm();
 
     const addNewRow = () => {
         if (!poClient) {
@@ -89,12 +94,11 @@ const SaleOrderAdd = () => {
     const onSubmit = async (data) => {
         data.Customer = poClient.value
         data.SaleOrderData = tableData
-        data.Store = salesStore.value,
-        data.Location = salesLoction.value
+        data.Store = lginerStore._id,
+            data.Location = lginerlocation._id
         data.OrderBookerName = OderBooker.label,
-        data.OrderBookerId = OderBooker.value
-        data.Status = "false"
-
+            data.OrderBookerId = OderBooker.value
+        data.Status = "true"
 
         console.log(data)
         try {
@@ -105,10 +109,11 @@ const SaleOrderAdd = () => {
 
             const res = await createDataFunction('/SaleOrder', data)
             console.log(res)
+            dispatch(fetchSaleOrder([res]))
             toast.success("Sales Invoice Add")
             setTimeout(() => {
 
-                navigate('/SaleOrder')
+                navigate(`/SaleOrderView/${res._id}`)
             }, 2000)
         }
         catch (err) {
@@ -217,7 +222,19 @@ const SaleOrderAdd = () => {
         label: item.OrderBookerName,
         Region: item.Region
     }))
+    useEffect(() => {
 
+        const Userstore = Store.find((item) => item._id == loginVendor?.Store[0])
+        const UserLocation = location.find((item) => item._id == loginVendor?.Location)
+
+        setlginerlocation(UserLocation)
+        setlginerStore(Userstore)
+        const today = new Date();
+        const formatted = today.toISOString().split("T")[0]; // YYYY-MM-DD
+        reset({
+            SaleOrderDate: formatted
+        })
+    }, []);
     return (
         <div className="p-4  ">
             <ToastContainer />
@@ -235,7 +252,7 @@ const SaleOrderAdd = () => {
                     </div>
                     <div>
                         <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Order Booker</label>
-                        <Select  isDisabled={tableData.length === 0 ? false : true} onChange={(v) => setClient(v)} options={OrderBookerDrp} />
+                        <Select isDisabled={tableData.length === 0 ? false : true} onChange={(v) => setClient(v)} options={OrderBookerDrp} />
                     </div>
                     <div>
                         <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Client</label>
@@ -271,11 +288,22 @@ const SaleOrderAdd = () => {
                     </div>
                     <div>
                         <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Location</label>
-                        <Select onChange={(v) => setDrp(v)} options={Location} />
+                        <input
+                            type="text"
+                            disabled={true}
+                            defaultValue={lginerlocation?.LocationName}
+                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
                     </div>
                     <div>
                         <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Store</label>
-                        <Select onChange={(v) => setSalesStore(v)} value={salesStore} options={storeDrp} />
+                        <input
+                            type="text"
+                            disabled={true}
+                            defaultValue={lginerStore?.StoreName}
+                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+
                     </div>
                     <div className="md:col-span-2 lg:col-span-2">
                         <label className="block text-sm md:text-base text-gray-700 font-semibold mb-2">Remarks</label>
@@ -295,6 +323,7 @@ const SaleOrderAdd = () => {
                                 <th className="border p-2 min-w-[200px]">Product</th>
                                 <th className="border p-2">CTN</th>
                                 <th className="border p-2 hidden lg:table-cell">Rate</th>
+                                <th className="border p-2 hidden lg:table-cell">Amount</th>
                                 <th className="border p-2">Action</th>
                             </tr>
                         </thead>
@@ -339,6 +368,10 @@ const SaleOrderAdd = () => {
                                         />
                                     </td>
                                     <td className="border p-2">
+
+                                        {row.Amount}
+                                    </td>
+                                    <td className="border p-2">
                                         <button
                                             type="button"
                                             onClick={() => removeRow(row.id)}
@@ -355,8 +388,10 @@ const SaleOrderAdd = () => {
                                 <tr className="bg-gray-100 font-semibold">
                                     <td className="border p-2">Total</td>
                                     <td className="border p-2">{totalCarton}</td>
+                                    <td className="border p-2"></td>
                                     <td className="border p-2 hidden lg:table-cell">{TotalAmount?.toFixed(2)}</td>
                                     <td className="border p-2"></td>
+
                                 </tr>
                             </tfoot>
                         )}

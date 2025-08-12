@@ -332,6 +332,7 @@ const SIdebar = () => {
               <NavItem to="/BankPaymentVoucherList" label="Bank Book" />
               <NavItem to="/CashVoucher" label="Cash Book" />
               <NavItem to="/JournalVoucherList" label="Journal Voucher" />
+              <NavItem to="/NoqoffAmount" label="Noqoff Amount" />
 
 
 

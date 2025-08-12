@@ -81,9 +81,10 @@ const SaleOrderList = () => {
     }, [])
 
     const handleEditClick = (id) => {
-        const isPost = SaleOrder.find((item) => item._id == id).PostStatus
-        if (isPost == true) {
-            return toast.error('first unpost for edit')
+        const isPost = SaleOrder.find((item) => item._id == id).Status
+        console.log(isPost)
+        if (isPost !== "true") {
+            return toast.error(`This Order ${isPost}`)
         }
         else {
             navigate(`/SaleOrderEdit/${id}`)
@@ -95,7 +96,7 @@ const SaleOrderList = () => {
         navigate(`/SaleOrderView/${id}`)
     }
     const handleDeleteClick = (id) => {
-        const isPost = SaleOrder.find((item) => item._id == id).PostStatus
+        const isPost = SaleOrder.find((item) => item._id == id).Status
         if (isPost == true) {
             return toast.error('first unpost for delete')
         }
@@ -108,9 +109,13 @@ const SaleOrderList = () => {
 
     const handleConfirmDelete = async () => {
         setOpenDeleteDialog(false);
-
-        setRows(rows.filter((row) => row._id !== selectedId));
-        deleteDataFunction(`SaleOrder/deleteSaleOrder/${selectedId}`)
+        try{
+            await deleteDataFunction(`SaleOrder/deleteSaleOrder/${selectedId}`)
+            setRows(rows.filter((row) => row._id !== selectedId));
+        }catch(err){
+            console.log(err.response.data.message)
+            toast.error(err.response.data.message)
+        }
 
     }
         ;

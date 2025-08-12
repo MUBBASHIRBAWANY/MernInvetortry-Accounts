@@ -178,7 +178,7 @@ console.log(data)
         transformedData.push({
           date: formatDate(item.VoucherDate),
           voucherNo: item.VoucherNumber,
-          refNo: item.Chq || '',
+          refNo: item.Chq || item.ClientRef2,
           refDate: '',
           debit: debit > 0 ? formatAmount(debit) : '',
           credit: credit > 0 ? formatAmount(credit) : '',

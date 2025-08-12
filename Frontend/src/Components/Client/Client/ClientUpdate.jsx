@@ -108,7 +108,7 @@ const ClientUpdate = () => {
             toast.error("Some Thing Went Wrong")
         }
     }
-    const pageName = "CustomerEdit"
+    const pageName = "Edit Customer"
     const UserRihts = useSelector((state) => state.UsersRights.UserRights)
     const checkAcess = async () => {
         const allowAcess = await UserRihts.find((item) => item == pageName)

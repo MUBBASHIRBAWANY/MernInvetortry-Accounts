@@ -19,7 +19,7 @@ const ClientAdd = () => {
 
     const navigate = useNavigate()
     const [activeTab, setActiveTab] = useState('basic');
-    const pageName = "CustomerAdd"
+    const pageName = "Add Customer"
     const UserRihts = useSelector((state) => state.UsersRights.UserRights)
     const Vendor = useSelector((state) => state.Vendor.state)
     const Region = useSelector((state) => state.Region.Region)

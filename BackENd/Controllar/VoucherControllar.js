@@ -12,22 +12,24 @@ export const createVoucher = async (req, res) => {
         if (existingVoucher) {
             return res.status(400).json({ message: "Voucher number already exists" });
         }
-
         // Reduce invoice amount
-        for (const item of invoiceData) {
-            console.log(item)
-            const inv = await SalesInvoiceModal.findOne({ SalesInvoice: item.inv });
-            console.log(inv)
-            if (!inv) {
-                return res.status(404).json({ message: `Invoice ${item.inv} not found` });
+        console.log(invoiceData)
+        if (invoiceData[0].amount !== 0 && invoiceData[0].inv !== "") {
+            console.log("first")
+            for (const item of invoiceData) {
+                console.log(item)
+                const inv = await SalesInvoiceModal.findOne({ SalesInvoice: item.inv });
+                console.log(inv)
+                if (!inv) {
+                    return res.status(404).json({ message: `Invoice ${item.inv} not found` });
+                }
+
+                await SalesInvoiceModal.findByIdAndUpdate(inv._id, {
+                    RemainingAmount: inv.RemainingAmount - Number(item.amount),
+                    RecivedAmount: inv.RecivedAmount + Number(item.amount)
+                });
             }
-
-            await SalesInvoiceModal.findByIdAndUpdate(inv._id, {
-                RemainingAmount: inv.RemainingAmount - Number(item.amount),
-                RecivedAmount: inv.RecivedAmount + Number(item.amount)
-            });
         }
-
         // Create a new voucher
         const newVoucher = new VoucherModal(req.body);
         await newVoucher.save();
@@ -45,6 +47,42 @@ export const createVoucher = async (req, res) => {
     }
 }
 
+
+export const getOnlyCreditSide = async (req, res) => {
+
+    const { Account } = req.params
+    try {
+        const result = await VoucherModal.aggregate([
+            {
+                $match: {
+                    "VoucharData.ClientRef3": "Advance",  // empty string only
+                    "VoucharData.Account": Account
+                },
+            },
+            { $unwind: "$VoucharData" }, // flatten VoucharData array
+            {
+                $project: {
+                    _id: 0,
+                    "VoucherNumber": 1,
+                    "VoucherDate": 1,
+                    "VoucharData.Account": 1,
+                    "VoucharData.Credit": 1,
+                    "VoucharData.Debit": 1,
+                    "VoucharData.ClientRef2": 1,
+                    "VoucharData.ClientRef3": 1,
+                    "VoucharData.id": 1,
+                    "VoucharData.AdjustedAmount": 1
+
+                }
+            }
+        ]);
+        const data = result.filter((item) => item.VoucharData.ClientRef3 === "Advance")
+        res.send(data);
+    } catch (err) {
+        res.send(err);
+
+    }
+};
 
 
 export const createSystemVoucher = async (req, res) => {
@@ -221,3 +259,69 @@ export const deleteVoucherByNumber = async (req, res) => {
         res.status(500).json({ message: "Error deleting voucher", error: error.message });
     }
 }
+
+
+export const AdjustVoucherInvoice = async (req, res) => {
+    const { AdjustedData } = req.body;
+
+    try {
+        // Find invoice & voucher
+        const invoice = await SalesInvoiceModal.findOne({
+            SalesInvoice: AdjustedData[0].Invoice.value
+        });
+        const voucher = await VoucherModal.findOne({
+            VoucherNumber: AdjustedData[0].Recipt.value
+        });
+
+        if (!invoice || !voucher) {
+            return res.status(404).json({ message: "Invoice or Voucher not found" });
+        }
+
+        // Find the voucher entry
+        const findVoucherEntry = voucher.VoucharData.find(
+            (item) => item.id == AdjustedData[0].EntryId
+        );
+
+        if (!findVoucherEntry) {
+            return res.status(404).json({ message: "Voucher entry not found" });
+        }
+
+        // Convert to numbers
+        const currentAdjusted = Number(findVoucherEntry.AdjustedAmount) || 0;
+        const currentRemaining = Number(invoice.RemainingAmount) || 0;
+        const currentReceived = Number(invoice.RecivedAmount) || 0;
+        const deduction = Number(AdjustedData[0].invoiceAmount) || 0;
+
+        // Validation
+        if (currentAdjusted - deduction < 0 || currentRemaining - deduction < 0) {
+            return res
+                .status(400)
+                .send("Voucher Adjusted Amount or Invoice Remaining Amount cannot be negative");
+        }
+
+        // Update values
+        findVoucherEntry.AdjustedAmount = String(currentAdjusted - deduction); // keep as string in DB
+        invoice.RemainingAmount = currentRemaining - deduction;
+        invoice.RecivedAmount = currentReceived + deduction;
+        findVoucherEntry.ClientRef2 = `${findVoucherEntry.ClientRef2}, Inv${AdjustedData[0].Invoice.value}`
+        // Mark nested array as modified
+        voucher.markModified("VoucharData");
+
+        // Save both
+        await voucher.save();
+        await invoice.save();
+
+        res.status(200).json({
+            message: "Voucher & Invoice adjusted successfully",
+            updatedVoucher: voucher,
+            updatedInvoice: invoice
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Something went wrong",
+            error: error.message
+        });
+    }
+};
+

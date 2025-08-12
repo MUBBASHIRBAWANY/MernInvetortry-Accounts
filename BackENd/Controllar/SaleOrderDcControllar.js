@@ -2,22 +2,25 @@ import SaleOrderDcModal from "../modal/SaleOrderDcModal.js"
 import SaleOrderModal from "../modal/SaleOrderModal.js";
 import TotalProductModal from "../modal/TotalProductModal.js";
 import VoucherModal from "../modal/VoucherModal.js";
+import mongoose from "mongoose";
 
 
 export const CreateSaleOrderDC = async (req, res) => {
-    const { DcData, Store, Location } = req.body
+    const { DcData, Store, Location } = req.body;
     try {
+        // 1️⃣ Stock check
         const stockChecks = await Promise.all(
             DcData.map(async item => {
                 const product = await TotalProductModal.findOne({
                     ProductName: item.product,
-                    Location: Location,
-                    Store: Store
+                    Location,
+                    Store
                 });
                 return { product, item };
             })
         );
 
+        // 2️⃣ Check insufficient stock
         const errors = stockChecks.filter(({ product, item }) =>
             !product || product.TotalQuantity < (item.Delivered || 0)
         );
@@ -36,17 +39,89 @@ export const CreateSaleOrderDC = async (req, res) => {
                 )
             });
         }
-        else {
-            const data = await SaleOrderDcModal.create(req.body)
-            res.status(200).send("data Add")
+
+        // 3️⃣ Decrease stock
+        const bulkStockOps = stockChecks.map(({ product, item }) => {
+            const avgRate = product?.AvgRate || 0;
+            const calculatedAmount = (item.Delivered || 0) * avgRate;
+
+            return {
+                updateOne: {
+                    filter: {
+                        ProductName: product?.ProductName,
+                        Location,
+                        Store,
+                        TotalQuantity: { $gte: item.Delivered }
+                    },
+                    update: {
+                        $inc: {
+                            TotalQuantity: -Number(item.Delivered) || 0,
+                            Amount: -calculatedAmount
+                        }
+                    }
+                }
+            };
+        });
+        await TotalProductModal.bulkWrite(bulkStockOps);
+
+        // 4️⃣ Create DC & Voucher
+        const data = await SaleOrderDcModal.create(req.body);
+        await VoucherModal.create(req.body.Accountsdata[0]);
+
+        for (const item of DcData) {
+            const { Order, product, Delivered } = item;
+
+            // Step 1: Fetch order containing the product
+            const orderDoc = await SaleOrderModal.findOne({
+                SaleOrderNumber: Order,
+                "SaleOrderData.product": product
+            });
+console.log(orderDoc, "orderDoc")
+            if (!orderDoc) continue;
+
+            const productEntry = orderDoc.SaleOrderData.find(p => p.product == product);
+            const remaining = Number(productEntry?.Remaingcarton || 0);
+            const toDeliver = Number(Delivered);
+            const newRemaining = remaining - toDeliver;
+
+            const result = await SaleOrderModal.updateOne(
+                { SaleOrderNumber: Order },
+                {
+                    $set: {
+                        "SaleOrderData.$[elem].Remaingcarton": newRemaining
+                    }
+                },
+                {
+                    arrayFilters: [{ "elem.product": new mongoose.Types.ObjectId(product) }]
+                }
+            );
+
+            
+        }
+       
+        const updatedOrders = DcData.map((item) => item.Order)
+        console.log(updatedOrders)
+        // Step 3: Check if all product of the order are fully delivered (Remaingcarton === 0)
+        for (const orderNumber of updatedOrders) {
+            const order = await SaleOrderModal.findOne({ SaleOrderNumber: orderNumber });
+
+            const isComplete = order.SaleOrderData.every(p => Number(p.Remaingcarton) === 0);
+
+            if (isComplete) {
+                await SaleOrderModal.updateOne(
+                    { SaleOrderNumber: orderNumber },
+                    { $set: { Status: "Complete" } }
+                );
+            }
         }
 
+        res.status(200).send(data);
+    } catch (err) {
+        console.error(err);
+        res.status(400).send("Something went wrong");
     }
-    catch (err) {
-        console.log(err)
-        res.status(400).send("some thing went wrong", err)
-    }
-}
+};
+
 
 export const UpdateSaleOrderDC = async (req, res) => {
     const { DcData, Location, Store } = req.body
@@ -246,14 +321,14 @@ export const updateOrderStatusDC = async (req, res) => {
                 if (remaining >= toDeliver) {
                     // Step 2: Decrease remaining carton
                     await SaleOrderModal.updateOne(
-                        {
-                            SaleOrderNumber: Order,
-                            "SaleOrderData.product": product
-                        },
+                        { SaleOrderNumber: Order },
                         {
                             $set: {
-                                "SaleOrderData.$.Remaingcarton": String(newRemaining) // or keep as number
+                                "SaleOrderData.$[elem].Remaingcarton": newRemaining
                             }
+                        },
+                        {
+                            arrayFilters: [{ "elem.product": new mongoose.Types.ObjectId(product) }]
                         }
                     );
 
@@ -376,11 +451,11 @@ export const updateOrderStatusDC = async (req, res) => {
 }
 
 
-export const OnlyTrue = async (req,res) => {
+export const OnlyTrue = async (req, res) => {
     try {
-        const data = await SaleOrderDcModal.find({Status : true})
-        
-        res.status(200).send({status : true , data : data})
+        const data = await SaleOrderDcModal.find({ Status: true })
+
+        res.status(200).send({ status: true, data: data })
 
     } catch (err) {
         res.status(400).send(err)

@@ -120,7 +120,7 @@
             data.SaleOrderData = tableData
             data.Store = salesStore.value,
             data.Location = salesLoction.value
-            data.Status = "false"
+            data.Status = "true"
         console.log(data)
             try {
                 const res = await updateDataFunction(`/SaleOrder/updateSaleOrder/${id}`, data)

@@ -29,6 +29,8 @@ const OrderDCAdd = () => {
   const OrderBooker = useSelector((state) => state.OrderBooker.OrderBooker)
   const Order = useSelector((state) => state.SaleOrder.SaleOrder)
   const Location = location.filter(item => loginVendor.Location.includes(item._id))
+  const TotalProduct = useSelector((state) => state.TotalProducts.TotalProducts)
+    const Admin = useSelector((state) => state.AdminReducer.AdminReducer)
 
 
 
@@ -50,7 +52,7 @@ const OrderDCAdd = () => {
 
   const getSaleOrder = (value) => {
     setPoClient(value)
-    const data = Order.filter((item) => item.Customer == value.value && item.Status == "false")
+    const data = Order.filter((item) => item.Customer == value.value && item.Status == "true")
       ?.map((item) => ({
         value: item.SaleOrderNumber,
         label: item.SaleOrderNumber,
@@ -58,7 +60,7 @@ const OrderDCAdd = () => {
         OrderBooker: item.OrderBookerId,
         Location: item.Location,
         Store: item.Store,
-        Status : item.Status,
+        Status: item.Status,
         id: Date.now() + Math.random()
       }))
       .filter((val => loginVendor.Store.includes(val.Store)))
@@ -143,6 +145,9 @@ const OrderDCAdd = () => {
 
   const TotalAmount = tableData.reduce((sum, row) => sum + (parseFloat(row.Amount) || 0), 0);
   const totalCarton = tableData.reduce((sum, row) => sum + (parseInt(row.carton) || 0), 0);
+  const totalCostAmount = tableData.map((item) => ({
+    amount: (TotalProduct.find((val) => val.ProductName == item.product && val.Location == loginVendor.Location[0] && val.Store == loginVendor.Store[0]).AvgRate * item.Delivered).toFixed(4)
+  })).reduce((sum, row) => sum + (parseInt(row.amount) || 0), 0);
 
   const onSubmit = async (data) => {
     const checke = tableData.filter(obj => !obj.hasOwnProperty("Delivered"))
@@ -154,21 +159,39 @@ const OrderDCAdd = () => {
     data.DcData = tableData
     data.Location = loginVendor.Location[0]
     data.Store = loginVendor.Store[0]
-    data.Status = "false"
+    data.Status = "true"
     try {
       const lastCode = await getDataFundtion("/DcOrder/lastcode")
       console.log(lastCode.data)
       lastCode.data.length == 0 ? data.DcNumber = "000001" : data.DcNumber = generateNextCodeForOrder(lastCode.data[0].DcNumber)
+      data.Accountsdata = [
+        {
+          VoucherType: "Dc",
+          VoucherNumber: `Dc${data.DcNumber}`,
+          status: "Post",
+          VoucherDate: data.DcDate,
+          VoucharData: [
+            {
+              Account: Admin.COSTOFSALES,
+              Debit: totalCostAmount,
+              store: loginVendor.Store[0]
+            },
+            {
+              Account: Admin.COSTOFSALES,
+              Debit: totalCostAmount,
+              store: loginVendor.Store[0]
+            }
+          ]
+        }
+      ]
 
-      console.log(data)
-
-
+console.log(data)
       const res = await createDataFunction('/DcOrder', data)
       console.log(res)
       toast.success("Sales Invoice Add")
       setTimeout(() => {
 
-        navigate('/OrderDCList')
+        navigate(`/OrderDCView/${res._id}`)
       }, 2000)
     }
     catch (err) {
@@ -176,7 +199,6 @@ const OrderDCAdd = () => {
       toast.error("some went gone wrong")
       const error = err.response.data.errors
       if (error) {
-
         try {
           const notAvalible = `this product not avalibale ${Products.find((item) => item._id == error[0]).ProductName} on your location`
           toast.error(notAvalible)
@@ -303,7 +325,7 @@ const OrderDCAdd = () => {
                     />
                   </td>
                   <td className="border p-2">
-                    {row.Remaingcarton - row.Delivered || row.Remaingcarton }
+                    {row.Remaingcarton - row.Delivered || row.Remaingcarton}
                   </td>
                   <td className="border p-2 hidden md:table-cell">
                     {OrderBooker.find((item) => item._id === row.OrderBooker).OrderBookerName}

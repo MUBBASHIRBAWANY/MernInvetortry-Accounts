@@ -80,6 +80,9 @@ const BankPaymentVoucherAdd = () => {
             vendor: '',
             Debit: 0,
             Credit: 0,
+            ClientRef2 : "",
+            ClientRef3 : "Advance"
+
         }]);
     };
 
@@ -147,17 +150,20 @@ const BankPaymentVoucherAdd = () => {
         if (field === "Debit") {
             updatedRow.Debit = value;
             updatedRow.Credit = 0;
+            
         }
 
         // Handle Credit field
         if (field === "Credit") {
             updatedRow.Credit = value;
             updatedRow.Debit = 0;
+            updatedRow.ClientRef3 === "Advance" ? updatedRow.AdjustedAmount = value : null
         }
 
         // Handle Ref field (async part)
         if (field === "ClientRef2") {
             console.log(value)
+            updatedRow.ClientRef3 = value.value
             updatedRow.ClientRef2 = value.value;
             const RemainInvAmt = ClientInv.find((val) => val.SalesInvoice === value.value)?.RemainingAmount
             updatedRow.Credit = RemainInvAmt
@@ -194,7 +200,6 @@ const BankPaymentVoucherAdd = () => {
             show: true
 
         })
-
         data.VoucharData = tableData,
         voucherType === "BR" ? data.DebitAccount = debitAccount : data.CreditAccount = creditAccount
         data.status = "Post"
@@ -204,7 +209,7 @@ const BankPaymentVoucherAdd = () => {
             data.VoucherNumber = `${voucherType}0000001`
         } else {
             let nextVoucherNumber = (parseInt(code[0].VoucherNumber.slice('2', "9"))) + 1
-            data.VoucherNumber = `BP${nextVoucherNumber.toString().padStart(7, '0')}`;
+            data.VoucherNumber = `${voucherType}${nextVoucherNumber.toString().padStart(7, '0')}`;
         }
         TotalDebit = tableData.reduce((sum, row) => sum + (parseFloat(row.Debit) || 0), 0);
         TotalCredit = tableData.reduce((sum, row) => sum + (parseFloat(row.Credit) || 0), 0);
@@ -222,11 +227,9 @@ const BankPaymentVoucherAdd = () => {
             inv :  inv.ClientRef2
         }))
         data.invoiceData = invoiceData
-        try {
-            
+        try {            
             console.log(data)
             const res = await createDataFunction("/Voucher", data)
-
             console.log(res)
             setTimeout(() => {
                 navigate("/BankPaymentVoucherList");

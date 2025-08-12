@@ -14,10 +14,10 @@ const SaleOrderListPage = () => {
           </button>
         </Link>
         <span className='ml-[50%]' >
-          <SaleOrderPost />
+          
         </span>
         <span className='px-[1vw]'>
-          <SaleOrderUnPost />
+          
         </span>
       </div>
       <SaleOrderList />

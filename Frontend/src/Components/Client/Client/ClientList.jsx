@@ -75,8 +75,8 @@ const ClientList = () => {
     dispatch(fetchZone(Zone.data))
   }
 
-  const DeleteRight = "CustomerDelete"
-  const pageName = "CustomerList"
+  const DeleteRight = "Delete Customer"
+  const pageName = "List Customer"
   const UserRihts = useSelector((state) => state.UsersRights.UserRights)
   const checkAcess = async () => {
     const allowAcess = await UserRihts.find((item) => item == DeleteRight)
@@ -108,10 +108,13 @@ const ClientList = () => {
 
   const handleConfirmDelete = async () => {
     setOpenDeleteDialog(false);
-    setRows(rows.filter((row) => row.id !== selectedId));
+    if(deleteR){
+      setRows(rows.filter((row) => row.id !== selectedId));
     const res = await deleteDataFunction(`customer/deletCustomer/${selectedId}`)
-    console.log(res)
-    
+    }   
+    else {
+      toast.error("Access denied")
+    }
   };
 
   const columns = [
