@@ -6,21 +6,19 @@ import mongoose from "mongoose";
 
 
 export const CreateSaleOrderDC = async (req, res) => {
-    const { DcData, Store, Location } = req.body;
+    const { DcData, Store, Location } = req.body
     try {
-        // 1️⃣ Stock check
         const stockChecks = await Promise.all(
             DcData.map(async item => {
                 const product = await TotalProductModal.findOne({
                     ProductName: item.product,
-                    Location,
-                    Store
+                    Location: Location,
+                    Store: Store
                 });
                 return { product, item };
             })
         );
 
-        // 2️⃣ Check insufficient stock
         const errors = stockChecks.filter(({ product, item }) =>
             !product || product.TotalQuantity < (item.Delivered || 0)
         );
@@ -39,88 +37,18 @@ export const CreateSaleOrderDC = async (req, res) => {
                 )
             });
         }
-
-        // 3️⃣ Decrease stock
-        const bulkStockOps = stockChecks.map(({ product, item }) => {
-            const avgRate = product?.AvgRate || 0;
-            const calculatedAmount = (item.Delivered || 0) * avgRate;
-
-            return {
-                updateOne: {
-                    filter: {
-                        ProductName: product?.ProductName,
-                        Location,
-                        Store,
-                        TotalQuantity: { $gte: item.Delivered }
-                    },
-                    update: {
-                        $inc: {
-                            TotalQuantity: -Number(item.Delivered) || 0,
-                            Amount: -calculatedAmount
-                        }
-                    }
-                }
-            };
-        });
-        await TotalProductModal.bulkWrite(bulkStockOps);
-
-        // 4️⃣ Create DC & Voucher
-        const data = await SaleOrderDcModal.create(req.body);
-        await VoucherModal.create(req.body.Accountsdata[0]);
-
-        for (const item of DcData) {
-            const { Order, product, Delivered } = item;
-
-            // Step 1: Fetch order containing the product
-            const orderDoc = await SaleOrderModal.findOne({
-                SaleOrderNumber: Order,
-                "SaleOrderData.product": product
-            });
-console.log(orderDoc, "orderDoc")
-            if (!orderDoc) continue;
-
-            const productEntry = orderDoc.SaleOrderData.find(p => p.product == product);
-            const remaining = Number(productEntry?.Remaingcarton || 0);
-            const toDeliver = Number(Delivered);
-            const newRemaining = remaining - toDeliver;
-
-            const result = await SaleOrderModal.updateOne(
-                { SaleOrderNumber: Order },
-                {
-                    $set: {
-                        "SaleOrderData.$[elem].Remaingcarton": newRemaining
-                    }
-                },
-                {
-                    arrayFilters: [{ "elem.product": new mongoose.Types.ObjectId(product) }]
-                }
-            );
-
-            
-        }
-       
-        const updatedOrders = DcData.map((item) => item.Order)
-        console.log(updatedOrders)
-        // Step 3: Check if all product of the order are fully delivered (Remaingcarton === 0)
-        for (const orderNumber of updatedOrders) {
-            const order = await SaleOrderModal.findOne({ SaleOrderNumber: orderNumber });
-
-            const isComplete = order.SaleOrderData.every(p => Number(p.Remaingcarton) === 0);
-
-            if (isComplete) {
-                await SaleOrderModal.updateOne(
-                    { SaleOrderNumber: orderNumber },
-                    { $set: { Status: "Complete" } }
-                );
-            }
+        else {
+            const data = await SaleOrderDcModal.create(req.body)
+            res.status(200).send("data Add")
         }
 
-        res.status(200).send(data);
-    } catch (err) {
-        console.error(err);
-        res.status(400).send("Something went wrong");
     }
-};
+    catch (err) {
+        console.log(err)
+        res.status(400).send("some thing went wrong", err)
+    }
+}
+
 
 
 export const UpdateSaleOrderDC = async (req, res) => {

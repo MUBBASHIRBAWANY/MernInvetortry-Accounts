@@ -17,7 +17,8 @@ const PurchaseReturnReturnPost = () => {
     const [submit, setSubmit] = useState(false)
     const invoices = useSelector((state) => state.PurchaseReturn.PurchaseReturn)
     const Admin = useSelector((state) => state.AdminReducer.AdminReducer)
-
+    const Accounts = useSelector((state) => state.ChartofAccounts.ChartofAccounts)
+    const Vendor = useSelector((state) => state.Vendor.state)
     const loadInvoiceOptions = async (inputValue) => {
         if (!inputValue) return [];
 
@@ -57,63 +58,53 @@ const PurchaseReturnReturnPost = () => {
                 Store: item.Store,
                 Location: item.Location,
                 id: item._id,
+                inv : item.InvoiceRef,
                 status: true,
                 date: item.PurchaseReturnDate,
                 returnData: item.PurchaseReturnData,
+                AccountsData: {
+                    VoucherType: "Prr",
+                    VoucherNumber: `Prr${item.PurchaseReturn}`,
+                    status: "Post",
+                    VoucherDate: item.PurchaseReturnDate,
+                    VoucharData: [
+                        {
+                            Account: Accounts.find((val) => val.AccountCode == Vendor.find((V) => V._id === item.Vendor).AccountCode)._id,
+                            Debit: item.PurchaseReturnData.reduce((sum, row) => sum + (parseFloat(row.netAmunt) || 0), 0),
+                            store: item.Store,
+                        },
+                        {
+                            Account: Admin.finishedGoods,
+                            Credit: item.PurchaseReturnData.reduce((sum, row) => sum + (parseFloat(row.GrossAmount) || 0), 0),
+                            store: item.Store,
+                        },
+                        {
+                            Account: Admin.PurchaseDiscount,
+                            Debit: item.PurchaseReturnData.reduce((sum, row) => sum + (parseFloat(row.discount) || 0), 0),
+                            store: item.Store,
+                        },
+                        {
+                            Account: Admin.TradeDiscount,
+                            Debit: item.PurchaseReturnData.reduce((sum, row) => sum + (parseFloat(row.AfterTaxdiscount) || 0), 0),
+                            store: item.Store,
+                        },
+                        {
+                            Account: Admin.Gst,
+                            Credit: item.PurchaseReturnData.reduce((sum, row) => sum + (parseFloat(row.Gst) || 0), 0),
+                            store: item.Store,
+                        },
+
+                    ]
+                        .filter(
+                            item => (item.Debit ?? 0) !== 0 || (item.Credit ?? 0) !== 0
+                        )
+                }
             })
         })
-        const accountsData = allTrue.map((item) => (
-            {
-                VoucherType: "Prr",
-                VoucherNumber: `Prr${item.PurchaseReturn}`,
-                status: "Post",
-                VoucherDate: item.date,
-                VoucharData: [
-                    {
-                        Account: Admin.Vendor,
-                        Debit: item.returnData.reduce((sum, row) => sum + (parseFloat(row.NetAmountWintAdvanceTax) || 0), 0),
-                        store: item.Store,
-                    },
-                    {
-                        Account: Admin.finishedGoods,
-                        Credit: item.returnData.reduce((sum, row) => sum + (parseFloat(row.GrossAmount) || 0), 0),
-                        store: item.Store,
-                    },
-                    {
-                        Account: Admin.PurchaseDiscount,
-                        Debit: item.returnData.reduce((sum, row) => sum + (parseFloat(row.discount) || 0), 0),
-                        store: item.Store,
-                    },
-                    {
-                        Account: Admin.TradeDiscount,
-                        Debit: item.returnData.reduce((sum, row) => sum + (parseFloat(row.AfterTaxdiscount) || 0), 0),
-                        store: item.Store,
-                    },
-                    {
-                        Account: Admin.Gst,
-                        Credit: item.returnData.reduce((sum, row) => sum + (parseFloat(row.Gst) || 0), 0),
-                        store: item.Store,
-                    },
-                    {
-                        Account: Admin.AdvanceTax,
-                        Credit: item.returnData.reduce((sum, row) => sum + (parseFloat(row.AdvanceTax) || 0), 0),
-                        store: item.Store,
-                    },
-                ]
-                    .filter(
-                        item => (item.Debit ?? 0) !== 0 || (item.Credit ?? 0) !== 0
-                    )
-            }))
 
-        console.log(accountsData)
-        for (const item of accountsData) {
-            try {
-                const data = await createDataFunction("/Voucher/createSystemVoucher", item)
-                console.log(item)
-            } catch (err) {
-                console.log(err)
-            }
-        }
+        console.log(allTrue)
+
+
         for (const item of allTrue) {
             console.log(allTrue)
             try {
@@ -161,7 +152,7 @@ const PurchaseReturnReturnPost = () => {
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
                         {/* Modal Header */}
                         <div className="flex justify-between items-center p-6 border-b">
-                            <h3 className="text-xl font-semibold text-gray-800">Select Purchase Invoice</h3>
+                            <h3 className="text-xl font-semibold text-gray-800">Select Purchase Return</h3>
                             <button
                                 onClick={() => setIsOpen(false)}
                                 className="text-gray-500 hover:text-gray-700"

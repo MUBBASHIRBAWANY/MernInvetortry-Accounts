@@ -1,4 +1,5 @@
 import DamageProductModal from "../modal/DamageProductModal.js";
+import SalesInvoiceModal from "../modal/SalesInvoiceModal.js";
 import SalesReturnModal from "../modal/SalesReturnModal.js";
 import TotalProductModal from "../modal/TotalProductModal.js";
 
@@ -402,3 +403,7 @@ export const createSalesInvoiceReturnBulk = async (req, res) => {
     }
 };
 
+export const getCustomerSaleInvoice = async (req,res) =>{
+    const {Client} = req.params
+    const data = SalesInvoiceModal.find({Client : Client , })
+}

@@ -67,15 +67,16 @@ export const updatePurchaseInvoice = async (req, res) => {
     }
 }
 
-// export const getLastProduct = async (req, res) => {
-//     try {
-//         const LastProduct = await PurchaseInvoiceModal.findOne().sort({ _id: -1 }).limit(1)
-//         console.log(LastProduct)
-//         res.send({ status: true, data: LastProduct });
-//     } catch (err) {
-//         console.log(err)
-//     }
-// }
+export const getPurchaseInvoieByVendor = async (req, res) => {
+    const {Vendor} = req.params
+    try {
+        const byVendor = await PurchaseInvoiceModal.find({ Vendor: Vendor })
+        console.log(byVendor)
+        res.send({ status: true, data: byVendor });
+    } catch (err) {
+        console.log(err)
+    }
+}
 
 export const getAllPurchaseInvoice = async (req, res) => {
     try {

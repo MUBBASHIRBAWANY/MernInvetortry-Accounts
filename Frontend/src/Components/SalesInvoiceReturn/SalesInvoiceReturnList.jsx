@@ -38,6 +38,7 @@ const SalesInvoiceReturnList = () => {
       const response = await getDataFundtion(`/SalesInvoiceReturn?page=${page + 1}&limit=${pageSize}`);
       console.log(`/SaleInvoice?page=${page + 1}&limit=${pageSize}`);
       const customer = await getDataFundtion("/customer");
+      console.log(customer)
       const product = await getDataFundtion("/product");
       const orderBooker = await getDataFundtion("/OrderBooker");
       const list = response.data;

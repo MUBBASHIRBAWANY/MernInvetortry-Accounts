@@ -8,6 +8,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { createDataFunction, getDataFundtion } from '../../Api/CRUD Functions';
 import AsyncSelect from 'react-select/async';
 import { fetchproduct } from '../../Redux/Reducers/ProductReducer';
+import { fetchPurchaseReturn } from '../../Redux/Reducers/PurchaseReturnReducer';
 
 
 const PurchaseReturnAdd = () => {
@@ -18,11 +19,10 @@ const PurchaseReturnAdd = () => {
   const loginVendor = useSelector((state) => state.LoginerReducer.userDetail)
   const Store = useSelector((state) => state.Store.Store)
   const location = useSelector((state) => state.Location.Location)
-  const TotalProducts = useSelector((state) => state.TotalProducts.TotalProducts);
   const [filterProduct, setFilterProduct] = useState([])
   const [VendorDrp, setVendorDrp] = useState([])
-  const [defVen, setDefven] = useState({})
-  const [storeDrp, setStoreDrp] = useState([])
+  const [purchaseInvoice, setpurchaseInvoice] = useState({})
+  const [InvoiceRef, setInvoiceRef] = useState([])
   const [selectedStore, setSelectedStore] = useState(false)
   const [selectedLocation, setSelectedLocation] = useState('')
 
@@ -31,18 +31,20 @@ const PurchaseReturnAdd = () => {
   const [tableData, setTableData] = useState([]);
   const [lginerStore, setlginerStore] = useState([])
   const [lginerlocation, setlginerlocation] = useState([])
-
+  const [vendorInvoive, setVendorInvoive] = useState([])
   const AllVendor1 = Vendor.find((item) => item._id == loginVendor.Vendor[0])
   const AllVendor = { value: AllVendor1?._id, label: AllVendor1?.VendorName }
   const dispatch = useDispatch()
 
+
+
+
+
+
   const getData = async () => {
     const arrProduct = Products.length == 0 ? await getDataFundtion('/product') : Products
     Products.length == 0 ? dispatch(fetchproduct(arrProduct?.data)) : null
-
-
     if (loginVendor.userType == 1) {
-
       const vendor = Vendor.find((item) => item._id == loginVendor.Vendor[0])?.code
       const VendorProduct = Products.length == 0 ? arrProduct.data.filter((item) => item.mastercode.slice(0, 2) == vendor) : Products.filter((item) => item.mastercode.slice(0, 2) == vendor)
       const Userstore = Store.find((item) => item._id == loginVendor?.Store[0])
@@ -56,6 +58,7 @@ const PurchaseReturnAdd = () => {
     }
     else {
       const Userstore = Store.filter((item, index) => loginVendor?.Store[index])
+
       const UserLocation = location.filter((item, index) => loginVendor?.Location[index])
         .map((item1) => ({
           label: item1.LocationName,
@@ -68,7 +71,7 @@ const PurchaseReturnAdd = () => {
       }))
       console.log(UserLocation)
       setlginerlocation(UserLocation)
-
+      setlginerStore(stores)
 
       const vendorIdSet = new Set(loginVendor.Vendor);
       const AllVendor1 = Vendor.filter(vendor =>
@@ -87,72 +90,71 @@ const PurchaseReturnAdd = () => {
 
 
   }
-  const SortProduct = (value) => {
+  const getVendorInvoice = async (value) => {
     setPoVendor(value)
-    console.log(Products)
-    const vendor = Vendor.find((item) => item._id == value)?.code
-    const VendorProduct = Products.filter((item) => item.mastercode.slice(0, 2) == vendor)
-    setFilterProduct(VendorProduct)
+    setFilterProduct(Products)
+    const getPurchaseinvoice = await getDataFundtion(`/PurchaseInvoice/InvoiceByVendor/${value}`)
+    const Purchaseinvoice = getPurchaseinvoice?.data?.map((item) => ({
+      value: item.PurchaseInvoice,
+      label: item.PurchaseInvoice
+    })).slice(0, 50)
+    setVendorInvoive(Purchaseinvoice)
+    setpurchaseInvoice(getPurchaseinvoice?.data)
   }
 
   useEffect(() => {
+    const today = new Date();
+    const formatted = today.toISOString().split("T")[0]; // YYYY-MM-DD
+    reset({
+      PurchaseReturnDate: formatted
+    })
     getData()
   }, [])
-  const { register, handleSubmit, formState: { errors } } = useForm();
-
-  const addNewRow = () => {
-    setTableData([...tableData, {
-      id: Date.now(),
-      product: '',
-      box: 0,
-      carton: 0,
-      Gst: 0,
-      rate: 0,
-    }]);
-  };
+  const { register, handleSubmit, formState: { errors }, reset } = useForm();
 
 
 
   const removeRow = (id) => {
     setTableData(tableData.filter(row => row.id !== id));
   };
-  const loadInvoiceOptions = async (inputValue) => {
+
+  const loadPurchseInvoiceOptions = async (inputValue) => {
     if (!inputValue) return [];
 
-    const filtered = filterProduct
+    const filtered = purchaseInvoice
       .filter((item) =>
-        item.ProductName.toLowerCase().includes(inputValue.toLowerCase()) || item.mastercode.toLowerCase().includes(inputValue.toLowerCase())
+        item.invoiceCode.toLowerCase().includes(inputValue.toLowerCase())
       )
       .slice(0, 50); // limit to first 50 results
 
-    return filtered.map((item) => ({
-      label: `${item.ProductName} ${item.mastercode}`,
-      value: item._id
 
-    }));
+    return filtered.map((item) => ({
+      value: item.PurchaseInvoice,
+      label: item.PurchaseInvoice
+
+    })).slice(0, 50);
   };
 
-  const StartingProduct = filterProduct.slice(0, 50).map((item) => ({
-    label: `${item.ProductName} ${item.mastercode}`,
-    value: item._id
-  }));;
+
+  const setInvoiceData = (value) => {
+    setInvoiceRef(value.value)
+    const findInvoiceData = purchaseInvoice.find((item) => item.PurchaseInvoice == value.value)
+    setTableData(findInvoiceData.PurchaseData)
+  }
+
 
   const handleCellChange = (id, field, value) => {
-
+    console.log(field)
     setTableData(tableData.map(row => {
       if (row.id === id) {
 
         const updatedRow = { ...row, [field]: value };
         const checking = tableData.find((item) => item.id == id)
-        if (field == "Condition") {
-
-          updatedRow.Condition = value
-        }
         if (field == "product") {
-
           if (checking.product != value) {
             updatedRow.inclGstAmnt = ""
             updatedRow.netAmunt = ""
+            updatedRow.perBoxAmount = ""
             updatedRow.PerBoxValueGrs = ""
             updatedRow.box = 0
             updatedRow.unit = 0
@@ -160,8 +162,9 @@ const PurchaseReturnAdd = () => {
             updatedRow.GrossAmount = ""
             updatedRow.Gst = ''
             updatedRow.discount = ''
-            updatedRow.AfterTaxdiscount = ''
+            updatedRow.AfterTaxdiscount = 0
           }
+
         }
         if (updatedRow.product == "") {
           updatedRow.inclGstAmnt = ""
@@ -173,85 +176,80 @@ const PurchaseReturnAdd = () => {
           updatedRow.carton = ''
           updatedRow.GrossAmount = ""
           updatedRow.Gst = ''
-          updatedRow.AfterTaxdiscount = ''
+          updatedRow.AfterTaxdiscount = 0
         }
 
         const findProduct = Products.find((item) => item._id === updatedRow.product);
         if (field == "product") {
-          updatedRow.perBoxAmount = parseFloat(TotalProducts.find((item) => item.ProductName == updatedRow.product && item.Location == selectedLocation && item.Store == selectedStore)?.AvgRate).toFixed(5) || 0;
-          console.log(updatedRow.perBoxAmount)
           updatedRow.unit == 0
-          updatedRow.Condition = "Fresh"
         }
-
         if (field == "discount") {
           updatedRow.ValueAfterDiscout = updatedRow.GrossAmount - updatedRow.discount
-
-          updatedRow.ValuewithGst = updatedRow.Gst + updatedRow.ValueAfterDiscout
+          updatedRow.Gst = parseFloat(updatedRow.ValueAfterDiscout / 100 * findProduct.SaleTaxPercent).toFixed(4)
+          console.log()
+          updatedRow.ValuewithGst = parseFloat(Number(updatedRow.ValueAfterDiscout) + Number(updatedRow.Gst)).toFixed(4)
           updatedRow.netAmunt = updatedRow.ValuewithGst
+          updatedRow.netAmuntWithAdvnaceTax = updatedRow.netAmunt
         }
         if (field == "AfterTaxdiscount") {
           updatedRow.netAmunt = updatedRow.ValuewithGst - updatedRow.AfterTaxdiscount
-        }
+          updatedRow.netAmuntWithAdvnaceTax = updatedRow.netAmunt;
 
-        if (field === "box" || field === "carton") {
+        }
+        if (field === "box" || field === "carton" || field === "Rate") {
+          console.log(findProduct)
           if (findProduct) {
             const BoxinCarton = parseInt(findProduct.BoxinCarton || 0);
             const PcsinBox = parseInt(findProduct.PcsinBox || 0);
             const Allunit = BoxinCarton * PcsinBox;
-            updatedRow.discount = 0
-            updatedRow.AfterTaxdiscount = 0
-            updatedRow.ValuewithGst = ""
-            updatedRow.netAmunt = ""
-            updatedRow.ValueAfterDiscout = ""
-
             // Default values if empty
+            updatedRow.GrossAmount = (updatedRow.carton * updatedRow.Rate)
+            updatedRow.ValueAfterDiscout = updatedRow.GrossAmount - row.discount
             const box = parseInt(updatedRow.box || 0);
             const carton = parseInt(updatedRow.carton || 0);
             if (box === 0) {
-              updatedRow.unit = Allunit * carton;
+              console.log(updatedRow.Remaining)
+              if (value > row.Remaining) {
+                toast.error(`Remaining Qty is ${row.Remaining}`);
+                return row; 
+              }
+              else {
+                updatedRow.unit = Allunit * carton;
+              }
             } else if (carton === 0) {
-              updatedRow.unit = PcsinBox * box;
+              if (updatedRow.carton > updatedRow.Remaining) {
+                toast.error(`Remaning Qty is${updatedRow.Remaining}`)
+              }
+              else {
+                updatedRow.unit = PcsinBox * box;
+              }
             } else {
-              const totalbox = box * findProduct.PcsinBox
-              updatedRow.unit = Allunit * carton + totalbox;
-            }
+              if (updatedRow.carton > updatedRow.Remaining) {
+                toast.error(`Remaning Qty is${updatedRow.Remaining}`)
+              }
+              else {
+                const totalbox = box * findProduct.PcsinBox
+                updatedRow.unit = Allunit * carton + totalbox;
+              }
 
+            }
+            const boxPrice = (updatedRow.unit / findProduct.PcsinBox)
+            updatedRow.GrossAmount = (boxPrice * updatedRow.Rate)
             const totalBox = updatedRow.unit / findProduct.PcsinBox
-            updatedRow.GrossAmount = updatedRow.perBoxAmount * totalBox
+            console.log(totalBox)
+            updatedRow.perBoxAmount = updatedRow.inclGstAmnt / totalBox - row.discount
+            updatedRow.RetailValue = findProduct.RetailPrice * totalBox
+            updatedRow.PerBoxValueGrs = updatedRow.GrossAmount / totalBox
             updatedRow.ValueAfterDiscout = updatedRow.GrossAmount - row.discount
-            updatedRow.RetailValue = findProduct.RetailPrice
-            findProduct.SaleTaxBy == 2 ? (updatedRow.Gst = updatedRow.RetailValue / 100 * findProduct.SaleTaxPercent * totalBox) : updatedRow.Gst = updatedRow.GrossAmount / 100 * findProduct.SaleTaxPercent
-            updatedRow.ValuewithGst = updatedRow.Gst + updatedRow.ValueAfterDiscout
+            findProduct.SaleTaxBy == 2 ? updatedRow.Gst = updatedRow.RetailValue / 100 * findProduct.SaleTaxPercent : updatedRow.Gst = updatedRow.GrossAmount / 100 * findProduct.SaleTaxPercent - updatedRow.discount
+            updatedRow.netAmunt = (updatedRow.Gst || 0) + updatedRow.ValueAfterDiscout
+            
             updatedRow.totalBox = totalBox
 
           }
 
-        }
-        if (field == "PerBoxValueGrs") {
-          updatedRow.perBoxAmount = value;
-          updatedRow.PerBoxValueGrs = value;
-
-          const totalBox = updatedRow.unit / findProduct.PcsinBox;
-          updatedRow.totalBox = totalBox;
-
-          updatedRow.GrossAmount = value * totalBox;
-
-          updatedRow.ValueAfterDiscout = updatedRow.GrossAmount - row.discount;
-
-          updatedRow.RetailValue = findProduct.RetailPrice;
-
-          if (findProduct.SaleTaxBy == 2) {
-            updatedRow.Gst = (updatedRow.RetailValue / 100) * findProduct.SaleTaxPercent * totalBox;
-          } else {
-            updatedRow.Gst = (updatedRow.GrossAmount / 100) * findProduct.SaleTaxPercent;
-          }
 
         }
-        updatedRow.ValuewithGst = parseFloat(updatedRow.Gst + updatedRow.ValueAfterDiscout).toFixed(4);
-        updatedRow.netAmunt = parseFloat(updatedRow.ValuewithGst - updatedRow.AfterTaxdiscount).toFixed(4);
-        updatedRow.AdvanceTax = parseFloat((updatedRow.netAmunt / 100) * 0.1).toFixed(4)
-        updatedRow.NetAmountWintAdvanceTax = parseFloat(Number(updatedRow.netAmunt) + Number(updatedRow.AdvanceTax)).toFixed(4)
         return updatedRow;
       }
       return row;
@@ -260,28 +258,27 @@ const PurchaseReturnAdd = () => {
   const totalDiscount = tableData.reduce((sum, row) => sum + (parseFloat(row.discount) || 0), 0);
   const totalGST = tableData.reduce((sum, row) => sum + (parseFloat(row.Gst) || 0), 0);
   const totalNetAmount = tableData.reduce((sum, row) => sum + (parseFloat(row.netAmunt) || 0), 0);
-  const totalBox = tableData.reduce((sum, row) => sum + (parseInt(row.box) || 0), 0);
   const totalCarton = tableData.reduce((sum, row) => sum + (parseInt(row.carton) || 0), 0);
-  const totalUnit = tableData.reduce((sum, row) => sum + (parseInt(row.unit) || 0), 0);
   const totalGrossAmount = tableData.reduce((sum, row) => sum + (parseFloat(row.GrossAmount) || 0), 0);
   const totalValueAfterDiscount = tableData.reduce((sum, row) => sum + (parseFloat(row.ValueAfterDiscout) || 0), 0);
-  const totalValuewithGst = tableData.reduce((sum, row) => sum + (parseFloat(row.ValuewithGst) || 0), 0);
-  const totalAfterTaxdiscount = tableData.reduce((sum, row) => sum + (parseFloat(row.AfterTaxdiscount) || 0), 0);
+
 
   const onSubmit = async (data) => {
     loginVendor.userType == 1 ? data.Vendor = loginVendor.Vendor[0] : data.Vendor = poVendor
     data.PurchaseReturnData = tableData
     data.VendorCode = loginVendor.userType == 1 ? Vendor.find((item) => item._id == loginVendor.Vendor).code : Vendor.find((item) => item._id == poVendor).code
-    data.Location = loginVendor.userType == 1 ? lginerlocation._id : selectedLocation
-    data.Store = loginVendor.userType == 1 ? lginerStore._id : selectedStore
+    data.Location = lginerlocation[0]?.value
+    data.Store = lginerStore[0]?.value
+    data.InvoiceRef = InvoiceRef
     console.log(data)
     try {
       console.log(data)
       const res = await createDataFunction('/PurchaseReturn', data)
-      console.log(res)
+      dispatch(fetchPurchaseReturn([res]))
       toast.success("Data Add")
+
       setTimeout(() => {
-        navigate('/PurchaseReturn')
+        navigate(`/PurchaseReturnView/${res._id}`)
       }, 2000)
     } catch (err) {
       try {
@@ -297,20 +294,6 @@ const PurchaseReturnAdd = () => {
     }
 
   };
-  const setDrp = (value) => {
-    setSelectedLocation(value);
-    setStoreDrp([]);
-    const userStore = loginVendor.Store
-    const updatedStoreDrp = Store?.filter(item => value.includes(item.Location))
-      .filter(store => userStore.includes(store._id))
-      .map((st) => ({
-        label: st.StoreName,
-        value: st._id
-      }))
-
-    setStoreDrp(updatedStoreDrp);
-    console.log(storeDrp)
-  }
   return (
     <div className=" p-4">
       <ToastContainer />
@@ -330,7 +313,7 @@ const PurchaseReturnAdd = () => {
           <div>
             <label className="block text-gray-700 font-semibold mb-2">Vendor</label>
             <Select
-              onChange={(vals) => SortProduct(vals.value)}
+              onChange={(vals) => getVendorInvoice(vals.value)}
               options={loginVendor.userType == 1 ? AllVendor : VendorDrp}
               defaultValue={loginVendor.userType == 1 ? AllVendor : null}
               isDisabled={loginVendor.userType == 1 ? true : false || tableData.length != 0 ? true : false}
@@ -340,7 +323,21 @@ const PurchaseReturnAdd = () => {
               placeholder="Select Vendor..."
             />
           </div>
-
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">Select Invoice</label>
+            <AsyncSelect
+              defaultOptions={vendorInvoive}
+              loadOptions={loadPurchseInvoiceOptions}
+              isDisabled={tableData.length != 0 ? true : false}
+              className="basic-single"
+              classNamePrefix="select"
+              isSearchable
+              placeholder="Select Vendor..."
+              onChange={(val) => {
+                setInvoiceData(val)
+              }}
+            />
+          </div>
           <div>
             <label className="block text-gray-700 font-semibold mb-2">Purchace Return No</label>
             <input
@@ -352,42 +349,23 @@ const PurchaseReturnAdd = () => {
             />
           </div>
           <div>
-            <label className="block text-gray-700 font-seumibold mb-2">Sales Flow Ref</label>
+            <label className="block text-gray-700 font-semibold mb-2">Location</label>
             <input
               type="text"
-              {...register("SalesFlowRef")}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 font-semibold mb-2">Location</label>
-            {loginVendor.userType == 1 ? <input
-              type="text"
               disabled={true}
-              defaultValue={lginerlocation?.LocationName}
+              defaultValue={lginerlocation[0]?.label}
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            /> : <Select
-              options={lginerlocation}
-              isDisabled={tableData.length != 0 ? true : false}
-              onChange={(v) => setDrp(v.value)}
             />
-            }
+
           </div>
           <div>
             <label className="block text-gray-700 font-semibold mb-2">Store</label>
-            {loginVendor.userType == 1 ? <input
+            <input
               type="text"
               disabled={true}
-              defaultValue={lginerStore?.StoreName}
+              value={lginerStore[0]?.label}
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            /> :
-              <Select
-                options={storeDrp}
-                isDisabled={tableData.length != 0 ? true : false}
-                onChange={(v) => setSelectedStore(v.value)}
-                value={storeDrp.find(opt => opt.value === selectedStore) || null}
-              />
-            }
+            />
           </div>
         </div>
 
@@ -397,19 +375,15 @@ const PurchaseReturnAdd = () => {
             <thead>
               <tr className="bg-gray-100">
                 <th className="border px-36">Product</th>
-                <th className="border p-2">Rate</th>
-                <th className="border p-2">Unit</th>
+
                 <th className="border p-2">CTN</th>
-                <th className="border p-2">Box</th>
+                <th className="border p-2">Rate</th>
                 <th className="border p-2">Trade Value Exc. All Taxes</th>
-                <th className="border p-2">Per Box Value exclusive gst</th>
                 <th className="border p-2">Discount </th>
                 <th className="border p-2"> Trade Value After Discount</th>
                 <th className="border p-2">Gst</th>
-                <th className="border p-2">Trade Value with Gst</th>
-                <th>After Gst Discount</th>
+
                 <th className="border p-2">Net Amount </th>
-                <th className="border p-2">Condition </th>
                 <th className="border p-2">Action</th>
               </tr>
             </thead>
@@ -417,32 +391,7 @@ const PurchaseReturnAdd = () => {
               {tableData.map((row) => (
                 <tr key={row.id} className="hover:bg-gray-50">
                   <td className="border p-2">
-                    <AsyncSelect
-                      menuPortalTarget={document.body}
-                      styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
-                      cacheOptions
-                      isClearable
-                      onChange={(selectedOption) =>
-                        handleCellChange(row.id, 'product', selectedOption ? selectedOption.value : '')
-                      }
-                      loadOptions={loadInvoiceOptions}
-                      className="basic-single"
-                      classNamePrefix="select"
-                      isSearchable
-                      placeholder="Select Product"
-                      defaultOptions={StartingProduct}
-                    />
-                  </td>
-                  <td className="border p-2">
-                    <input
-                      type="text"
-                      value={row.perBoxAmount}
-                      onChange={(e) => handleCellChange(row.id, 'PerBoxValueGrs', e.target.value)}
-                      className="w-full p-1 border rounded"
-                    />
-                  </td>
-                  <td className="border p-2">
-                    {row.unit}
+                    {Products.find((item) => item._id == row.product)?.ProductName}
                   </td>
                   <td className="border p-2">
                     <input
@@ -455,20 +404,18 @@ const PurchaseReturnAdd = () => {
                   <td className="border p-2">
                     <input
                       type="text"
-                      value={row.box}
-                      onChange={(e) => handleCellChange(row.id, 'box', e.target.value)}
+                      value={row.Rate}
+                      onChange={(e) => handleCellChange(row.id, 'Rate', e.target.value)}
                       className="w-full p-1 border rounded"
                     />
                   </td>
                   <td className="border p-2">
                     {row.GrossAmount}
                   </td>
-                  <td className="border p-2">
-                    {row.PerBoxValueGrs}
-                  </td>
+
                   <td className="border p-2">
                     <input
-                      type="text"
+                      type="number"
                       value={row.discount}
                       onChange={(e) => handleCellChange(row.id, 'discount', e.target.value)}
                       className="w-full p-1 border rounded"
@@ -480,25 +427,9 @@ const PurchaseReturnAdd = () => {
                   <td className="border p-2">
                     {row.Gst}
                   </td>
-                  <td className="border p-2">
-                    {row.ValuewithGst}
-                  </td>
-                  <td className="border p-2">
-                    <input
-                      type="text"
-                      value={row.AfterTaxdiscount}
-                      onChange={(e) => handleCellChange(row.id, 'AfterTaxdiscount', e.target.value)}
-                      className="w-full p-1 border rounded"
-                    />
-                  </td>
+
                   <td className="border p-2">
                     {row.netAmunt}
-                  </td>
-                  <td className="border p-2">
-                    <select name="" onChange={(e) => handleCellChange(row.id, "Condition", e.target.value)} id="" className='w-full p-1 text-xs md:text-sm border border-r-red-500 rounded'>
-                      <option value="Fresh">Fresh</option>
-                      <option value="Damage">Damage</option>
-                    </select>
                   </td>
                   <td className="border p-2">
                     <button
@@ -519,18 +450,14 @@ const PurchaseReturnAdd = () => {
               tableData.length != 0 ? <tfoot>
                 <tr className="bg-gray-100 font-semibold">
                   <td className="border p-2">Total</td>
-                  <td className="border p-2"></td>
-                  <td className="border p-2">{totalUnit}</td>
                   <td className="border p-2">{totalCarton}</td>
-                  <td className="border p-2">{totalBox}</td>
-                  <td className="border p-2">{totalGrossAmount.toFixed(2)}</td>
                   <td className="border p-2"></td>
+                  <td className="border p-2">{totalGrossAmount.toFixed(2)}</td>
                   <td className="border p-2">{totalDiscount.toFixed(2)}</td>
                   <td className="border p-2">{totalValueAfterDiscount.toFixed(2)}</td>
                   <td className="border p-2">{totalGST.toFixed(2)}</td>
-                  <td className="border p-2">{totalValuewithGst.toFixed(2)}</td>
-                  <td className="border p-2">{totalAfterTaxdiscount.toFixed(2)}</td>
                   <td className="border p-2">{totalNetAmount.toFixed(2)}</td>
+                  <td className="border p-2"></td>
                   <td className="border p-2"></td>
                 </tr>
               </tfoot> : null
@@ -539,13 +466,6 @@ const PurchaseReturnAdd = () => {
         </div>
 
         <div className="flex  justify-between">
-          <button
-            type="button"
-            onClick={addNewRow}
-            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-          >
-            Add Row
-          </button>
 
           <button
             type="submit"

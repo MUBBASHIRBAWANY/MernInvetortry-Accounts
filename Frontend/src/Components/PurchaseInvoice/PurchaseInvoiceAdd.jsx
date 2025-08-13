@@ -159,7 +159,6 @@ const PurchaseInvoiceAdd = () => {
             updatedRow.GrossAmount = ""
             updatedRow.Gst = ''
             updatedRow.discount = ''
-            updatedRow.AfterTaxdiscount = 0
           }
 
         }
@@ -206,9 +205,10 @@ const PurchaseInvoiceAdd = () => {
             const carton = parseInt(updatedRow.carton || 0);
             if (box === 0) {
               updatedRow.unit = Allunit * carton;
+              updatedRow.Remaining = Allunit * carton;;
             } else if (carton === 0) {
               updatedRow.unit = PcsinBox * box;
-
+               updatedRow.Remaining = PcsinBox * box;
             } else {
               const totalbox = box * findProduct.PcsinBox
               updatedRow.unit = Allunit * carton + totalbox;
@@ -223,7 +223,7 @@ const PurchaseInvoiceAdd = () => {
             updatedRow.ValueAfterDiscout = updatedRow.GrossAmount - row.discount
             findProduct.SaleTaxBy == 2 ? updatedRow.Gst = updatedRow.RetailValue / 100 * findProduct.SaleTaxPercent : updatedRow.Gst = updatedRow.GrossAmount / 100 * findProduct.SaleTaxPercent - updatedRow.discount
             updatedRow.ValuewithGst = updatedRow.Gst + updatedRow.ValueAfterDiscout
-            updatedRow.netAmunt = parseFloat(updatedRow.ValuewithGst - updatedRow.AfterTaxdiscount).toFixed(4)
+            updatedRow.netAmunt = parseFloat(updatedRow.ValuewithGst - (updatedRow.AfterTaxdiscount || 0)).toFixed(4)
             updatedRow.netAmuntWithAdvnaceTax = parseFloat(Number(updatedRow.netAmunt))
             updatedRow.totalBox = totalBox
 
@@ -239,13 +239,9 @@ const PurchaseInvoiceAdd = () => {
   const totalDiscount = tableData.reduce((sum, row) => sum + (parseFloat(row.discount) || 0), 0);
   const totalGST = tableData.reduce((sum, row) => sum + (parseFloat(row.Gst) || 0), 0);
   const totalNetAmount = tableData.reduce((sum, row) => sum + (parseFloat(row.netAmunt) || 0), 0);
-  const totalBox = tableData.reduce((sum, row) => sum + (parseInt(row.box) || 0), 0);
   const totalCarton = tableData.reduce((sum, row) => sum + (parseInt(row.carton) || 0), 0);
-  const totalUnit = tableData.reduce((sum, row) => sum + (parseInt(row.unit) || 0), 0);
   const totalGrossAmount = tableData.reduce((sum, row) => sum + (parseFloat(row.GrossAmount) || 0), 0);
   const totalValueAfterDiscount = tableData.reduce((sum, row) => sum + (parseFloat(row.ValueAfterDiscout) || 0), 0);
-  const totalValuewithGst = tableData.reduce((sum, row) => sum + (parseFloat(row.ValuewithGst) || 0), 0);
-  const totalAfterTaxdiscount = tableData.reduce((sum, row) => sum + (parseFloat(row.AfterTaxdiscount) || 0), 0);
   const onSubmit = async (data) => {
     const findUndinvoice = tableData.filter((item) => item.netAmuntWithAdvnaceTax === NaN || item.Product === "" || item.carton === 0 || item.netAmuntWithAdvnaceTax < 0)
     if (findUndinvoice.length !== 0) {

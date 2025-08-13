@@ -16,7 +16,7 @@ const BankPaymentVoucherAdd = () => {
     const BankAccountNumber = useSelector((state) => state.AdminReducer.AdminReducer)
     const filteredAccount = Account.filter((item) => item.AccountCode.length > 5)
     const Client = useSelector((state) => state.Client.client)
-    const [voucherType, setVoucherType] = useState("")
+    const [voucherType, setVoucherType] = use1State("")
     const [debitAccount, setDebitAccount] = useState("");
     const [creditAccount, setCreditAccount] = useState("");
     const [tableData, setTableData] = useState([]);

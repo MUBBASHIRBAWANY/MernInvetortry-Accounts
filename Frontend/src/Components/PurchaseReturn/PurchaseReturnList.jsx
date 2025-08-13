@@ -36,7 +36,7 @@ const PurchaseReturnList = () => {
     const getData = async () => {
         setLoading(true)
         try {
-            const AdminId = "687e14a624a274d5e844be49"
+            const AdminId = "68903ec2664155e11db10367"
             const data = await getDataFundtion("/PurchaseReturn")
             console.log(data)
             const res = await getDataFundtion(`/Administrative/get/${AdminId}`)

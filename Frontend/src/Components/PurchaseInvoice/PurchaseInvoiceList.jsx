@@ -18,6 +18,7 @@ import { fetchproduct } from '../../Redux/Reducers/ProductReducer';
 import { fetchLocation } from '../../Redux/Reducers/LocationReducer';
 import { fetchStore } from '../../Redux/Reducers/StoreReducer';
 import { fetchChartofAccounts } from '../../Redux/Reducers/ChartofAccountsReduser';
+import { fetchAdminReducer } from '../../Redux/Reducers/AdminReducer';
 
 const PurchaseInvoiceList = () => {
   const [rows, setRows] = useState();
@@ -37,13 +38,15 @@ const PurchaseInvoiceList = () => {
   const getData = async () => {
     setLoading(true)
     try {
+      const AdminiD = "68903ec2664155e11db10367"
       const data = await getDataFundtion("/PurchaseInvoice")
       const vendor = await getDataFundtion("/vendor")
       const product = await getDataFundtion("/product")
       const loction = await getDataFundtion('/Location')
       const Store = await getDataFundtion("/store")
       const Accounts = await getDataFundtion('/ChartofAccounts')
-
+      const res = await getDataFundtion(`/Administrative/get/${AdminiD}`)
+console.log(res)
       const list = data.data
       const PurchaseInvoiceSorted = [...list].sort((a, b) => a.PurchaseInvoice - b.PurchaseInvoice)
       console.log(PurchaseInvoiceSorted)
@@ -52,6 +55,7 @@ const PurchaseInvoiceList = () => {
       dispatch(fetchLocation(loction.data))
       dispatch(fetchStore(Store.data))
       dispatch(fetchVendor(vendor.data))
+      dispatch(fetchAdminReducer(res))
       dispatch(fetchPurchaseInvoice(PurchaseInvoiceSorted))
       setLoading(false)
       setRows(list)
