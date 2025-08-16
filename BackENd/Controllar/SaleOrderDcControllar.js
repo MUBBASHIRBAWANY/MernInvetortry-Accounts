@@ -39,7 +39,7 @@ export const CreateSaleOrderDC = async (req, res) => {
         }
         else {
             const data = await SaleOrderDcModal.create(req.body)
-            res.status(200).send("data Add")
+            res.status(200).send(data)
         }
 
     }
@@ -246,24 +246,25 @@ export const updateOrderStatusDC = async (req, res) => {
                 const remaining = Number(productEntry?.Remaingcarton || 0);
                 const toDeliver = Number(Delivered);
                 const newRemaining = remaining - toDeliver;
-                if (remaining >= toDeliver) {
-                    // Step 2: Decrease remaining carton
+                if (!isNaN(newRemaining)) {
                     await SaleOrderModal.updateOne(
-                        { SaleOrderNumber: Order },
+                        {
+                            SaleOrderNumber: Order,
+                        },
                         {
                             $set: {
                                 "SaleOrderData.$[elem].Remaingcarton": newRemaining
                             }
                         },
                         {
-                            arrayFilters: [{ "elem.product": new mongoose.Types.ObjectId(product) }]
+                            arrayFilters: [{ "elem.product": product }]
                         }
                     );
 
+                    console.log(`Updated ${Order} - ${product}: ${remaining} - ${toDeliver} = ${newRemaining}`);
                 }
             }
             const updatedOrders = ProductData.map((item) => item.Order)
-            console.log(updatedOrders)
             // Step 3: Check if all product of the order are fully delivered (Remaingcarton === 0)
             for (const orderNumber of updatedOrders) {
                 const order = await SaleOrderModal.findOne({ SaleOrderNumber: orderNumber });

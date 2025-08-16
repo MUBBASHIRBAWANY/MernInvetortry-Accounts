@@ -63,68 +63,68 @@ export const getSalesInvoiceByDate = async (req, res) => {
 
         ])
 
-
-        const mergedDataPurchase = await PurchaseInvoiceModal.aggregate([
-            {
-                $match: {
-                    PurchaseInvoiceDate: {
-                        $gte: startDate,
-                        $lte: endDate,
+console.log(startDate , endDate)
+            const mergedDataPurchase = await PurchaseInvoiceModal.aggregate([
+                {
+                    $match: {
+                        PurchaseInvoiceDate: {
+                            $gte: startDate,
+                            $lte: endDate,
+                        },
                     },
                 },
-            },
-            { $unwind: "$PurchaseData" },
+                { $unwind: "$PurchaseData" },
 
-            {
-                $group: {
-                    _id: {
-                        product: "$PurchaseData.product",
-                        PostStatus: "$PostStatus",
-                        PurchaseInvoiceDate: "$PurchaseInvoiceDate",
-                        invoice: "$PurchaseInvoice",
-                        SalesFlowRef: `$SalesFlowRef`,
-                        Store: "$Store",
-                        Location: "$Location",
-                    },
+                {
+                    $group: {
+                        _id: {
+                            product: "$PurchaseData.product",
+                            PostStatus: "$PostStatus",
+                            PurchaseInvoiceDate: "$PurchaseInvoiceDate",
+                            invoice: "$PurchaseInvoice",
+                            SalesFlowRef: `$SalesFlowRef`,
+                            Store: "$Store",
+                            Location: "$Location",
+                        },
 
-                    totalPurchaseBox: { $sum: "$PurchaseData.totalBox" },
-                    totalPurchaseUnits: { $sum: "$PurchaseData.unit" },
-                    totalPurchaseValueExclGst: { $sum: "$PurchaseData.GrossAmount" },
-                    totalPurchaseGst: {
-                        $sum: {
-                            $toDouble: "$PurchaseData.Gst"
+                        totalPurchaseBox: { $sum: "$PurchaseData.totalBox" },
+                        totalPurchaseUnits: { $sum: "$PurchaseData.unit" },
+                        totalPurchaseValueExclGst: { $sum: "$PurchaseData.GrossAmount" },
+                        totalPurchaseGst: {
+                            $sum: {
+                                $toDouble: "$PurchaseData.Gst"
+                            }
+                        },
+                        totalPurchaseNetAmount: {
+                            $sum: {
+                                $toDouble: "$PurchaseData.netAmunt"
+                            }
                         }
                     },
-                    totalPurchaseNetAmount: {
-                        $sum: {
-                            $toDouble: "$PurchaseData.netAmunt"
-                        }
-                    }
-                },
-
-            },
-            {
-                $project: {
-                    _id: 0,
-                    product: "$_id.product",
-                    PostStatus: "$_id.PostStatus",
-                    totalPurchaseBox: 1,
-                    invoice: `$_id.invoice`,
-                    totalPurchaseGst: 1,
-                    date: "$_id.PurchaseInvoiceDate",
-                    totalPurchaseUnits: 1,
-                    totalPurchaseGrossAmntinclGst: 1,
-                    totalPurchaseValueExclGst: 1,
-                    type: "Purchase",
-                    SalesFlowRef: `$_id.SalesFlowRef`,
-                    Store: "$_id.Store",
-                    Location: "$_id.Location",
 
                 },
-            },
+                {
+                    $project: {
+                        _id: 0,
+                        product: "$_id.product",
+                        PostStatus: "$_id.PostStatus",
+                        totalPurchaseBox: 1,
+                        invoice: `$_id.invoice`,
+                        totalPurchaseGst: 1,
+                        date: "$_id.PurchaseInvoiceDate",
+                        totalPurchaseUnits: 1,
+                        totalPurchaseGrossAmntinclGst: 1,
+                        totalPurchaseValueExclGst: 1,
+                        type: "Purchase",
+                        SalesFlowRef: `$_id.SalesFlowRef`,
+                        Store: "$_id.Store",
+                        Location: "$_id.Location",
 
-        ])
-        //   console.log(mergedDataPurchase, mergedDataPurchaseBefore)
+                    },
+                },
+
+            ])
+          console.log(mergedDataPurchase , startDate, endDate,"mergedDataPurchase" )
         const TotalSalesDataBefore = await SalesInvoiceModal.aggregate([
             {
                 $match: {
@@ -703,7 +703,6 @@ export const getSalesInvoiceByDate = async (req, res) => {
 
 
         const YearOpening = firstOpneing[0]?.InvoetoryData
-        console.log(YearOpening)
 
         if (status == "Post") {
             const truemergedStockReplacementData = mergedStockReplacementData.filter((item) => item.PostStatus == true)
@@ -723,9 +722,9 @@ export const getSalesInvoiceByDate = async (req, res) => {
             const truemarge = truemergedDataPurchase.concat(truemergedDataSale).concat(truemergedDataPurchaseBefore).concat(trueTotalSalesDataBefore).concat(YearOpening).concat(truemergedInventoryOutData).concat(trurmergedInventoryOutDataBefore).concat(truemergedInventoryinDataBefore).concat(truemergedInventoryinData).concat(trueTotalSalesReturnDataBefore).concat(truemergedDataReturn).concat(turemergedPurchaseReturnData).concat(trueTotalPurchaseReturnBefore).concat(truemergedStockReplacementData).concat(trueTotalStockReplacementBefore)
 console.log("Fresh aya hai Damage" , damage)
             if (damage == "Damage") {
-                console.log("Damage aya hai")
+                
                 const Damagedata = truemarge.filter((item) => item.Condition === "Damage")
-                console.log(Damagedata)
+                
                 res.json(Damagedata)
             }
             
@@ -788,7 +787,6 @@ console.log("Fresh aya hai Damage" , damage)
             const falseTotalSalesReturnDataBefore = damage == "Fresh" ? TotalSalesReturnDataBefore.filter((item) => item.PostStatus == false && item.Condition !== "Damage") : damage == "Damage" ? TotalSalesReturnDataBefore.filter((item) => item.PostStatus == false && item.Condition == "Damage") : TotalSalesReturnDataBefore.filter((item) => item.PostStatus == false)
             const falsemarge = falsemergedDataPurchase.concat(falsemergedDataSale).concat(falsemergedDataPurchaseBefore).concat(falseTotalSalesDataBefore).concat(YearOpening).concat(falsemergedInventoryOutData).concat(falsemergedInventoryOutDataBefore).concat(falsemergedInventoryinDataBefore).concat(falsemergedInventoryinData).concat(falseTotalSalesReturnDataBefore).concat(falsemergedDataReturn).concat(falsemergedPurchaseReturnData).concat(falseTotalPurchaseReturnBefore).concat(falsemergedStockReplacementData).concat(falseTotalStockReplacementBefore)
             if (damage == "Damage") {
-                console.log("unpost ka Damage aya hai")
                 
                 const Damagedata = falsemarge.filter((item) => item.Condition === "Damage" || item.Type == 'Damage' || item.type == "StockReplacement")
                 console.log(Damagedata)
